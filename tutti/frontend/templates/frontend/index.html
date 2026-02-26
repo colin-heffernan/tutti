@@ -1,16 +1,15 @@
+{% load django_vite %}
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Tutti</title>
-        {% load static %}
-        <link rel="stylesheet" type="text/css" href="{% static "css/index.css" %}" />
+        {% vite_hmr_client %}
+        {% vite_react_refresh %}
+        {% vite_asset "src/index.jsx" %}
     </head>
     <body>
-        <div id="main">
-            <div id="app"></div>
-        </div>
-        <script src="{% static "frontend/main.js" %}"></script>
+        <div id="root"></div>
     </body>
 </html>
