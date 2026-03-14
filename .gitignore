@@ -1,0 +1,15 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+tutti/static/*
+*.sqlite3
+
+# Virtual environments
+.venv
+
+# Node-generated files
+node_modules/

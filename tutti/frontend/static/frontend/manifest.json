@@ -1,0 +1,8 @@
+{
+  "src/index.jsx": {
+    "file": "index.js",
+    "name": "index",
+    "src": "src/index.jsx",
+    "isEntry": true
+  }
+}
