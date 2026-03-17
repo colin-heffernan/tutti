@@ -24,14 +24,25 @@ function PlaceholderPage({ title, description }) {
 function App() {
   const [currentPage, setCurrentPage] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
-  const [oauthError, setOauthError] = useState("");
+  // const [oauthLoading, setOauthLoading] = useState(false);
+  // const [oauthError, setOauthError] = useState("");
 
   // Check for existing session
-  /*useEffect(() => {
-    const token = localStorage.getItem("tutti_access_token");
-    if (token) setIsLoggedIn(true);
-  }, []);*/
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/auth/session/");
+        if(!response.ok) {
+          throw new Error(`HTTP response not OK. Status: ${response.status}`);
+        }
+        const result = await response.json();
+        setIsLoggedIn(result.isAuthenticated);
+      } catch(err) {
+        setIsLoggedIn(false);
+      }
+    };
+    checkSession();
+  }, []);
 
   // Handle Google OAuth callback
   /*useEffect(() => {
@@ -65,20 +76,22 @@ function App() {
 
   const handleLogin = () => setIsLoggedIn(true);
 
+  const handleLogout = () => setIsLoggedIn(false);
+
   return (
     <div style={{ minHeight: "100vh", background: THEME.bg }}>
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} isLoggedIn={isLoggedIn} />
 
       <main style={{ padding: "0 16px", paddingBottom: 60 }}>
-        {oauthLoading && (
+        {/*oauthLoading && (
           <div style={{ maxWidth: 440, margin: "100px auto", textAlign: "center" }}>
             <p style={{ fontSize: 18, color: THEME.textPrimary, fontFamily: THEME.fontDisplay }}>
               Signing you in with Google...
             </p>
           </div>
-        )}
+        )*/}
 
-        {oauthError && !oauthLoading && (
+        {/*oauthError && !oauthLoading && (
           <div style={{
             maxWidth: 440, margin: "20px auto", padding: "12px 16px",
             borderRadius: THEME.radius.md, background: `${THEME.error}15`,
@@ -87,13 +100,13 @@ function App() {
           }}>
             {oauthError}
           </div>
-        )}
+        )*/}
 
-        {!oauthLoading && (
+        {true && (
           <>
             {currentPage === "login" && <LoginPage onNavigate={setCurrentPage} onLogin={handleLogin} />}
             {currentPage === "signup" && <SignUpPage onNavigate={setCurrentPage} onLogin={handleLogin} />}
-            {currentPage === "home" && <ActivityFeed onNavigate={setCurrentPage} />}
+            {currentPage === "home" && <ActivityFeed onNavigate={setCurrentPage} onLogout={handleLogout} />}
             {currentPage === "discover" && <PlaceholderPage title="Discover Music" description="Music recommendations based on your profile." />}
             {currentPage === "network" && <PlaceholderPage title="Your Network" description="Find users with similar tastes and nearby listeners." />}
             {currentPage === "profile" && <PlaceholderPage title="Your Profile" description="Listening stats, visualizations, and account settings." />}

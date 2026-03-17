@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import THEME from "../theme";
+import api from "../services/api";
 
-function ActivityFeed({ onNavigate }) {
+function ActivityFeed({ onNavigate, onLogout }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const [users, setUsers] = useState([]);
 
   // Fetch the users from the REST API
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/users");
+        const response = await fetch("http://127.0.0.1:8000/api/users/");
         if(!response.ok) {
           throw new Error(`HTTP response not OK. Status: ${response.status}`);
         }
@@ -25,6 +26,16 @@ function ActivityFeed({ onNavigate }) {
     };
     fetchUsers();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+      onLogout();
+      onNavigate("login");
+    } catch (err) {
+      setError(err.message + "\nLogout failed.");
+    }
+  };
 
   //styling
   return (
@@ -53,6 +64,8 @@ function ActivityFeed({ onNavigate }) {
               <p>Password: {user.password}</p>
             </>))}
           </>)}
+          <br />
+          <button onClick={handleLogout}>Test</button>
         </>)}
       </>)}
     </div>

@@ -1,56 +1,53 @@
-from django.shortcuts import render
 from django.http import JsonResponse
-from django.contrib.auth.forms import UserCreationForm
-from django.views.generic import CreateView
 from django.middleware.csrf import get_token
+from django.contrib.auth import get_user_model, authenticate, login, logout
 from rest_framework import generics, status
+from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import TuttiUserSerializer, CreateTuttiUserSerializer
-from .models import TuttiUser
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authentication import SessionAuthentication
+from .serializers import TuttiUserSerializer
 
 # Create your views here.
-class TuttiUserView(generics.ListAPIView):
+TuttiUser = get_user_model()
+
+class TuttiUserView(ListAPIView):
     queryset = TuttiUser.objects.all()
     serializer_class = TuttiUserSerializer
 
-class SignUpView(CreateView):
-    form_class = UserCreationForm
+class CreateTuttiUserView(CreateAPIView):
+    model = TuttiUser
+    permission_classes = [AllowAny]
+    serializer_class = TuttiUserSerializer
 
-def csrf(request):
-    return JsonResponse({"csrfToken": get_token(request)})
+class LoginTuttiUserView(APIView):
+    def post(self, request):
+        user = authenticate(
+            request,
+            username=request.data.get("username"),
+            password=request.data.get("password"),
+        )
+        if user:
+            login(request, user)
+            return Response({"status": "Logged in"})
+        return Response({"status": "Invalid credentials"}, status=403)
 
-# class CreateTuttiUserView(APIView):
-#     serializer_class = CreateTuttiUserSerializer
+class LogoutTuttiUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        logout(request)
+        return Response({"status": "Logged out"})
 
-#     def post(self, request, format=None):
-#         serializer = self.serializer_class(data=request.data)
-#         if serializer.is_valid():
-#             username = serializer.data.get("username")
-#             display_name = serializer.data.get("display_name")
-#             email = serializer.data.get("email")
-#             password = serializer.data.get("password")
-#             queryset = TuttiUser.objects.filter(username=username)
-#             if queryset.exists():
-#                 return Response()
-#             else:
-#                 user = TuttiUser.objects.create_user(username, email, password=password)
-#                 user.save()
-#                 return Response(TuttiUserSerializer(user).data, status=status.HTTP_200_OK)
+class CsrfView(APIView):
+    def get(self, request):
+        return Response({"csrfToken": get_token(request)})
 
-#         # if not self.request.session.exists(self.request.session.session_key):
-#         #     self.request.session.create()
+class TuttiUserSessionView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        return Response({"isAuthenticated": True})
 
-#         # serializer = self.serializer_class(data=request.data)
-#         # if serializer.is_valid():
-#         #     username = serializer.data.get("username")
-#         #     display_name = serializer.data.get("display_name")
-#         #     email = serializer.data.get("email")
-#         #     password = serializer.data.get("password")
-#         #     queryset = TuttiUser.objects.filter(username=username)
-#         #     if queryset.exists():
-#         #         pass
-#         #     else:
-#         #         user = TuttiUser(username=username, display_name=display_name, email=email, password=password)
-#         #         user.save()
-#         #     return Response(TuttiUserSerializer(user).data, status=status.HTTP_200_OK)
+# def csrf(request):
+#     return JsonResponse({"csrfToken": get_token(request)})
