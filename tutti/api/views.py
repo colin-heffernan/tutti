@@ -48,6 +48,3 @@ class TuttiUserSessionView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         return Response({"isAuthenticated": True})
-
-# def csrf(request):
-#     return JsonResponse({"csrfToken": get_token(request)})
