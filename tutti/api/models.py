@@ -26,6 +26,15 @@ class TuttiUser(AbstractBaseUser, PermissionsMixin):
 # liked = XREF
 
 class Scrobble(models.Model):
-    musicbrainz_id = models.CharField(max_length=36)
-    user_id = models.IntegerField(null=False)
-    time = models.DateTimeField(auto_now_add=True)
+    release_mbid = models.CharField(max_length=36, null=False)
+    recording_mbid = models.CharField(max_length=36, null=False)
+    tuttiuser = models.ForeignKey(TuttiUser, on_delete=models.CASCADE)
+    raw_data = models.CharField(max_length=128, null=False)
+    rating = models.IntegerField(null=False, default=1)
+    time_created = models.DateTimeField(auto_now_add=True)
+    time_updated = models.DateTimeField(auto_now_add=True)
+
+class CachedQuery(models.Model):
+    key = models.CharField(max_length=64, unique=True, null=False)
+    data = models.CharField(null=False)
+    time_updated = models.DateTimeField(auto_now_add=True)

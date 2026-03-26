@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import ActivityFeed from "./pages/ActivityFeed";
+import Profile from "./pages/Profile";
 
 // Placeholder for pages you'll build later
 function PlaceholderPage({ title, description }) {
@@ -24,19 +25,13 @@ function PlaceholderPage({ title, description }) {
 function App() {
   const [currentPage, setCurrentPage] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // const [oauthLoading, setOauthLoading] = useState(false);
-  // const [oauthError, setOauthError] = useState("");
 
   // Check for existing session
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/auth/session/");
-        if(!response.ok) {
-          throw new Error(`HTTP response not OK. Status: ${response.status}`);
-        }
-        const result = await response.json();
-        setIsLoggedIn(result.isAuthenticated);
+        const isAuthenticated = await api.checkSession();
+        setIsLoggedIn(isAuthenticated);
         setCurrentPage("home");
       } catch(err) {
         setIsLoggedIn(false);
@@ -44,36 +39,6 @@ function App() {
     };
     checkSession();
   }, []);
-
-  // Handle Google OAuth callback
-  /*useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
-    const state = urlParams.get("state");
-    const storedState = sessionStorage.getItem("google_oauth_state");
-
-    if (code && state) {
-      window.history.replaceState({}, "", window.location.pathname);
-      sessionStorage.removeItem("google_oauth_state");
-
-      if (state !== storedState) {
-        setOauthError("Security check failed. Please try again.");
-        return;
-      }
-
-      setOauthLoading(true);
-      api.googleAuth(code)
-        .then((data) => {
-          setIsLoggedIn(true);
-          setCurrentPage(data.is_new_user ? "signup" : "home");
-        })
-        .catch((err) => {
-          setOauthError(err.message || "Google sign-in failed. Please try again.");
-          setCurrentPage("login");
-        })
-        .finally(() => setOauthLoading(false));
-    }
-  }, []);*/
 
   const handleLogin = () => setIsLoggedIn(true);
 
@@ -83,36 +48,13 @@ function App() {
     <div style={{ minHeight: "100vh", background: THEME.bg }}>
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} isLoggedIn={isLoggedIn} />
 
-      <main style={{ padding: "0 16px", paddingBottom: 60 }}>
-        {/*oauthLoading && (
-          <div style={{ maxWidth: 440, margin: "100px auto", textAlign: "center" }}>
-            <p style={{ fontSize: 18, color: THEME.textPrimary, fontFamily: THEME.fontDisplay }}>
-              Signing you in with Google...
-            </p>
-          </div>
-        )*/}
-
-        {/*oauthError && !oauthLoading && (
-          <div style={{
-            maxWidth: 440, margin: "20px auto", padding: "12px 16px",
-            borderRadius: THEME.radius.md, background: `${THEME.error}15`,
-            border: `1px solid ${THEME.error}40`, color: THEME.error,
-            fontSize: 13, fontFamily: THEME.fontBody,
-          }}>
-            {oauthError}
-          </div>
-        )*/}
-
-        {true && (
-          <>
-            {currentPage === "login" && <LoginPage onNavigate={setCurrentPage} onLogin={handleLogin} />}
-            {currentPage === "signup" && <SignUpPage onNavigate={setCurrentPage} onLogin={handleLogin} />}
-            {currentPage === "home" && <ActivityFeed onNavigate={setCurrentPage} onLogout={handleLogout} />}
-            {currentPage === "discover" && <PlaceholderPage title="Discover Music" description="Music recommendations based on your profile." />}
-            {currentPage === "network" && <PlaceholderPage title="Your Network" description="Find users with similar tastes and nearby listeners." />}
-            {currentPage === "profile" && <PlaceholderPage title="Your Profile" description="Listening stats, visualizations, and account settings." />}
-          </>
-        )}
+      <main style={{ /*padding: "0 16px",*/ paddingBottom: 60 }}>
+        {currentPage === "login" && <LoginPage onNavigate={setCurrentPage} onLogin={handleLogin} isLoggedIn={isLoggedIn} />}
+        {currentPage === "signup" && <SignUpPage onNavigate={setCurrentPage} onLogin={handleLogin} isLoggedIn={isLoggedIn} />}
+        {currentPage === "home" && <ActivityFeed onNavigate={setCurrentPage} onLogout={handleLogout} isLoggedIn={isLoggedIn} />}
+        {currentPage === "discover" && <PlaceholderPage title="Discover Music" description="Music recommendations based on your profile." />}
+        {currentPage === "network" && <PlaceholderPage title="Your Network" description="Find users with similar tastes and nearby listeners." />}
+        {currentPage === "profile" && <Profile onNavigate={setCurrentPage} onLogout={handleLogout} isLoggedIn={isLoggedIn} />}
       </main>
     </div>
   );

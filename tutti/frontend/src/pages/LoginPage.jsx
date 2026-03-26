@@ -7,17 +7,19 @@ import PrimaryButton from "../components/PrimaryButton";
 import { UserIcon, EyeIcon, EyeOffIcon } from "../components/Icons";
 
 //username and password elements
-function LoginPage({ onNavigate, onLogin }) {
+function LoginPage({ onNavigate, onLogin, isLoggedIn }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  if(isLoggedIn) {
+    onNavigate("profile");
+  }
 
-//login functionality with api calls to backend database / google open auth
+  //login functionality with api calls to backend database / google open auth
   const handleLogin = async () => {
-    setError("");
     if (!username || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
@@ -26,8 +28,9 @@ function LoginPage({ onNavigate, onLogin }) {
       onNavigate("home");
     } catch (err) {
       setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
 
