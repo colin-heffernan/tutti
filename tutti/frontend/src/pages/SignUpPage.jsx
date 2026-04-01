@@ -9,7 +9,7 @@ import SongSearch from "../components/SongSearch";
 // import { GoogleOAuthButton, AuthDivider } from "../components/GoogleOAuth";
 import { UserIcon, EyeIcon, EyeOffIcon, MapPinIcon, CheckIcon } from "../components/Icons";
 
-function SignUpPage({ onNavigate, onLogin }) {
+function SignUpPage({ onNavigate, onLogin, isLoggedIn }) {
   const [step, setStep] = useState(1);
 
   // fields
@@ -21,6 +21,10 @@ function SignUpPage({ onNavigate, onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  if(isLoggedIn) {
+    onNavigate("profile");
+  }
 
   // geolocation functionality hooks call
   const geo = useGeolocation();
