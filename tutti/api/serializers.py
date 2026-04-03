@@ -58,6 +58,7 @@ class ScrobbleSerializer(serializers.ModelSerializer):
     recording_mbid = serializers.CharField(read_only=True)
     tuttiuser = serializers.PrimaryKeyRelatedField(read_only=True)
     raw_data = serializers.CharField(read_only=True)
+    rating = serializers.IntegerField(read_only=True)
     def create(self, validated_data):
         release_query = f"\"{validated_data["album"]}\" AND date:\"{validated_data["date"]}\" AND tracks:\"{validated_data["num_tracks"]}\""
         release_mbid = None
@@ -86,4 +87,4 @@ class ScrobbleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Scrobble
-        fields = ['id', 'release_mbid', 'recording_mbid', 'tuttiuser', 'raw_data', 'time_created', 'time_updated', 'artist', 'album', 'title', 'date', 'track', 'num_tracks']
+        fields = ['id', 'release_mbid', 'recording_mbid', 'tuttiuser', 'raw_data', 'rating', 'time_created', 'time_updated', 'artist', 'album', 'title', 'date', 'track', 'num_tracks']

@@ -6,6 +6,7 @@ from .views import (
     CreateScrobbleView,
     TuttiUserScrobbleView, TuttiUserProfileView,
     ScrobbleMetadataView, ScrobbleCoverView,
+    ScrobbleLikeView, ScrobbleDislikeView,
 )
 
 urlpatterns = [
@@ -19,4 +20,6 @@ urlpatterns = [
     path('user/profile/', TuttiUserProfileView.as_view()),
     path('scrobble/data/', ScrobbleMetadataView.as_view()),
     path('scrobble/cover/', ScrobbleCoverView.as_view()),
+    path('scrobble/like/', ScrobbleLikeView.as_view()),
+    path('scrobble/dislike/', ScrobbleDislikeView.as_view()),
 ]

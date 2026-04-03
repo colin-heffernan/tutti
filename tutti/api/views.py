@@ -149,3 +149,35 @@ class ScrobbleCoverView(APIView):
         return Response({
             "cover": cover,
         })
+
+class ScrobbleLikeView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        scrobble_id = request.data.get("scrobble_id")
+        scrobble_query = Scrobble.objects.filter(id=scrobble_id)
+        if scrobble_query.count() < 1:
+            return Response({"error": "Could not edit scrobble"}, status_code=404)
+        scrobble = scrobble_query[0]
+        if scrobble.tuttiuser != request.user:
+            return Response({"error": "Could not edit scrobble"}, status_code=404)
+        scrobble.rating = 1 if scrobble.rating == 2 else 2
+        scrobble.save()
+        serializer = ScrobbleSerializer(scrobble)
+        return Response({"scrobble": serializer.data})
+
+class ScrobbleDislikeView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        scrobble_id = request.data.get("scrobble_id")
+        scrobble_query = Scrobble.objects.filter(id=scrobble_id)
+        if scrobble_query.count() < 1:
+            return Response({"error": "Could not edit scrobble"}, status_code=404)
+        scrobble = scrobble_query[0]
+        if scrobble.tuttiuser != request.user:
+            return Response({"error": "Could not edit scrobble"}, status_code=404)
+        scrobble.rating = 1 if scrobble.rating == 0 else 0
+        scrobble.save()
+        serializer = ScrobbleSerializer(scrobble)
+        return Response({"scrobble": serializer.data})
