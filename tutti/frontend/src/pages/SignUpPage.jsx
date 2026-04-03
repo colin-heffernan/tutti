@@ -32,27 +32,11 @@ function SignUpPage({ onNavigate, onLogin, isLoggedIn }) {
   // selected songs array
   const [selectedSongs, setSelectedSongs] = useState([]);
 
-  // Validation of username and password
-  const validateStep1 = () => {
-    const newErrors = {};
-    if (!username) newErrors.username = "Username is required";
-    else if (username.length < 6) newErrors.username = "At least 6 characters";
-    else if (!/^[a-zA-Z0-9_]+$/.test(username)) newErrors.username = "Letters, numbers, and underscores only";
-    if (!email) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Invalid email format";
-    if (!password) newErrors.password = "Password is required";
-    else if (password.length < 8) newErrors.password = "At least 8 characters";
-    if (password !== confirmPassword) newErrors.confirmPassword = "Passwords don't match";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
 // api calls to database
   const handleCreateAccount = async () => {
-    if (!validateStep1()) return;
     setLoading(true);
     try {
-      await api.register({ username, email, password, display_name: displayName || username });
+      await api.register({ username, email, password, confirm_password: confirmPassword, display_name: displayName });
       setStep(2);
     } catch (err) {
       setErrors({ general: err.message });
@@ -65,10 +49,19 @@ function SignUpPage({ onNavigate, onLogin, isLoggedIn }) {
       setLoading(true);
       try {
         await api.updateLocation(geo.location.latitude, geo.location.longitude, geo.location.city, geo.location.country);
-      } catch (err) { console.error("Failed to save location:", err); }
+      } catch (err) {
+        console.error("Failed to save location:", err);
+      }
       setLoading(false);
     }
     setStep(3);
+    try {
+      await api.login({ username, password });
+      onLogin();
+      onNavigate("home");
+    } catch (err) {
+      setErrors({ general: err.message });
+    }
   };
 
   const handleSaveMusicProfile = async () => {
