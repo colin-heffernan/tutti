@@ -4,6 +4,7 @@
 
   function DiscoverPage({ isLoggedIn, onNavigate }) {
     const [profile, setProfile] = useState([]);
+    const [overlaps, setOverlaps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -14,8 +15,23 @@
       }
       const fetchProfile = async () => {
         try {
-          const userProfile = await api.getProfile();
+          const response = await api.getProfile();
+          const userProfile = Object.entries(response.profile).sort((a, b) => {
+            if(a[1] > b[1]) {
+              return -1;
+            } else if(a[1] < b[1]) {
+              return 1;
+            } else {
+              return a[0].toLowerCase().localeCompare(b[0].toLowerCase());
+            }
+          });
+          let userOverlaps = response.overlaps;
+          for(const [k, v] of Object.entries(userOverlaps)) {
+            userOverlaps[k] = Object.entries(v);
+          }
+          const userOverlapsList = Object.entries(userOverlaps);
           setProfile(userProfile);
+          setOverlaps(userOverlapsList);
         } catch (err) {
           setError(err.message);
         } finally {

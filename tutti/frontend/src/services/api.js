@@ -99,7 +99,7 @@ const api = {
   // Sends a request to get the current user's profile
   async getProfile() {
     const request = await api.request("/user/profile/");
-    return request.profile;
+    return request;
   },
 
   async updateLocation(lat, lng, city, country) {

@@ -85,6 +85,7 @@ class TuttiUserProfileView(APIView):
     def get(self, request):
         scrobbles = Scrobble.objects.filter(tuttiuser=self.request.user.id, time_created__gte=(timezone.now() - datetime.timedelta(180)))
         tags = {}
+        tag_overlaps = {}
         for scrobble in scrobbles:
             try:
                 date = scrobble.time_created.date()
@@ -93,8 +94,17 @@ class TuttiUserProfileView(APIView):
                 weight = 180 - (3 - rating) if rating > 0 else 0
                 recording = getMetadata("recording", f"rid:\"{scrobble.song.recording_mbid}\"", 1)
                 recording_tags = recording["recordings"][0]["tags"]
-                for recording_tag in recording_tags:
+                song_tags = []
+                for recording_tag in sorted(recording_tags, key=lambda x: x["name"]):
                     tag_name = recording_tag["name"]
+                    for song_tag in song_tags:
+                        if tag_name in tag_overlaps[song_tag]:
+                            tag_overlaps[song_tag][tag_name] += 1
+                        else:
+                            tag_overlaps[song_tag][tag_name] = 1
+                    song_tags.append(tag_name)
+                    if tag_name not in tag_overlaps:
+                        tag_overlaps[tag_name] = {}
                     if tag_name in tags:
                         tags[tag_name] += weight
                     else:
@@ -104,9 +114,10 @@ class TuttiUserProfileView(APIView):
         sum_scores = sum(tags.values())
         for tag in tags:
             tags[tag] = (tags[tag] * 100) / sum_scores
-        profile = [(tag, score) for tag, score in tags.items()]
-        profile.sort(reverse=True, key=lambda x: x[1])
-        return Response({"profile": profile})
+        overlaps = dict(filter(lambda x: x[1] != {}, tag_overlaps.items()))
+        for overlap_tag in overlaps:
+            overlaps[overlap_tag] = dict(filter(lambda x: x[1] != {}, overlaps[overlap_tag].items()))
+        return Response({"profile": tags, "overlaps": overlaps})
 
 class CreateScrobbleView(CreateAPIView):
     model = Scrobble
