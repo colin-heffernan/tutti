@@ -2,22 +2,43 @@ import { useState, useEffect } from "react";
 import THEME from "../theme";
 import api from "../services/api";
 import Scrobble from "../components/Scrobble";
+import GenreForceMap from "../components/GenreForceMap";
 
 function ActivityFeed({ onNavigate, onLogout, isLoggedIn }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scrobbles, setScrobbles] = useState([]);
+  const [profile, setProfile] = useState([]);
+  const [overlaps, setOverlaps] = useState({});
 
-  // Fetch user scrobbles
+  // Fetch user scrobbles and genre profile in parallel
   const fetchScrobbles = async () => {
     try {
-      const userScrobbles = await api.getScrobbles();
+      const [userScrobbles, profileData] = await Promise.all([
+        api.getScrobbles(),
+        api.getProfile(),
+      ]);
       setScrobbles(userScrobbles);
+      // Sort genres descending by score so slice(0, 25) gives top 25
+      const sortedProfile = Object.entries(profileData.profile).sort((a, b) => b[1] - a[1]);
+      setProfile(sortedProfile);
+      setOverlaps(profileData.overlaps);
       setError(null);
     } catch(err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshProfile = async () => {
+    try {
+      const profileData = await api.getProfile();
+      const sortedProfile = Object.entries(profileData.profile).sort((a, b) => b[1] - a[1]);
+      setProfile(sortedProfile);
+      setOverlaps(profileData.overlaps);
+    } catch(err) {
+      // non-critical, don't surface to user
     }
   };
 
@@ -164,6 +185,9 @@ function ActivityFeed({ onNavigate, onLogout, isLoggedIn }) {
             <p>{error.message}</p>
           </>)}
           {!error && (<>
+            {profile.length > 0 && (
+              <GenreForceMap profile={profile} overlaps={overlaps} />
+            )}
             {(!scrobbles || scrobbles.length == 0) && (<>
               <h1 style={{ fontFamily: THEME.fontDisplay, fontSize: 32, fontWeight: 700, color: THEME.textPrimary, marginBottom: 12 }}>
                 Your Feed
@@ -174,7 +198,7 @@ function ActivityFeed({ onNavigate, onLogout, isLoggedIn }) {
             </>)}
             {scrobbles && (<ul style={{"listStyleType": "none"}}>
               {scrobbles.map((scrobble) => (<li key={scrobble.id}>
-                <Scrobble song_id={scrobble.song_id} scrobble_id={scrobble.id} initialRating={scrobble.rating} />
+                <Scrobble song_id={scrobble.song_id} scrobble_id={scrobble.id} initialRating={scrobble.rating} onRatingChange={refreshProfile} />
               </li>))}
             </ul>)}
             <button onClick={makeScrobble /* TODO: Pass in data from a form */}>Add a scrobble of Radiohead - "No Surprises" from <i>OK Computer</i> (1997)</button>

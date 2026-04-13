@@ -23,7 +23,7 @@
     );
   }
 
-  function Scrobble({ song_id, scrobble_id, initialRating = 1 }) {
+  function Scrobble({ song_id, scrobble_id, initialRating = 1, onRatingChange }) {
     const [dataLoading, setDataLoading] = useState(true);
     const [coverLoading, setCoverLoading] = useState(true);
     const [dataError, setDataError] = useState(null);
@@ -66,6 +66,7 @@
       try {
         const result = await api.likeScrobble(scrobble_id);
         setRating(result.scrobble.rating);
+        onRatingChange?.();
       } catch(err) {
         // silently revert — no UI disruption for a rating failure
       } finally {
@@ -79,6 +80,7 @@
       try {
         const result = await api.dislikeScrobble(scrobble_id);
         setRating(result.scrobble.rating);
+        onRatingChange?.();
       } catch(err) {
         // silently revert
       } finally {
