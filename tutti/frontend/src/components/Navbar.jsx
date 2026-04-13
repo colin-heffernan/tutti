@@ -29,7 +29,9 @@ function BubbleNavButton({ icon: Icon, label, active, onClick }) {
   );
 }
 
-function Navbar({ currentPage, onNavigate, isLoggedIn }) {
+function Navbar({ currentPage, onNavigate, userId }) {
+  const isLoggedIn = userId != -1;
+
   return (
     <nav style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",

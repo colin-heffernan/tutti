@@ -109,7 +109,9 @@
     );
   }
 
-  function NetworkPage({ isLoggedIn, onNavigate }) {
+  function NetworkPage({ userId, onNavigate }) {
+    const isLoggedIn = userId != -1;
+
     useEffect(() => {
       if (!isLoggedIn) {
         onNavigate("login");

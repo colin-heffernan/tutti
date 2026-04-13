@@ -27,28 +27,29 @@
     );
   }
 
-  function Profile({ onNavigate, onLogout, isLoggedIn }) {
+  function Profile({ onNavigate, onLogout, userId }) {
     const [error, setError] = useState(null);
     const [locationSaved, setLocationSaved] = useState(false);
     const [locationLoading, setLocationLoading] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
-    const [me, setMe] = useState(null);
-    const geo = useGeolocation();
+    const [about, setAbout] = useState(null);
+    const geo = useGeolocation(userId);
+    const isLoggedIn = userId != -1;
 
     useEffect(() => {
       if (!isLoggedIn) {
         onNavigate("login");
         return;
       }
-      const fetchMe = async () => {
+      const fetchAbout = async () => {
         try {
-          const data = await api.getMe();
-          setMe(data);
+          const data = await api.getAbout(userId);
+          setAbout(data);
         } catch (err) {
           setError(err.message);
         }
       };
-      fetchMe();
+      fetchAbout();
     }, [isLoggedIn]);
 
     if (!isLoggedIn) return null;
@@ -67,10 +68,7 @@
       if (!geo.location) return;
       setLocationLoading(true);
       try {
-        await api.updateLocation(
-          geo.location.latitude, geo.location.longitude,
-          geo.location.city, geo.location.country
-        );
+        await api.updateLocation(userId, geo.location.city, geo.location.country);
         setLocationSaved(true);
       } catch (err) {
         setError("Could not save location — not yet available on the server.");
@@ -90,16 +88,16 @@
 
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <h1 style={{ fontFamily: THEME.fontDisplay, fontSize: 28, fontWeight: 700, color: THEME.textPrimary, margin: "0 0 6px" }}>
-            {me?.display_name || me?.username || "Your Profile"}
+            {about?.display_name || about?.username || "Your Profile"}
           </h1>
-          {me?.email && (
+          {about?.email && (
             <p style={{ fontFamily: THEME.fontBody, fontSize: 14, color: THEME.textSecondary, margin: "0 0 4px" }}>
-              {me.email}
+              {about.email}
             </p>
           )}
-          {me?.date_joined && (
+          {about?.date_joined && (
             <p style={{ fontFamily: THEME.fontBody, fontSize: 12, color: THEME.textPlaceholder, margin: 0 }}>
-              Member since {new Date(me.date_joined).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              Member since {new Date(about.date_joined).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
             </p>
           )}
         </div>

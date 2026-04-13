@@ -1,19 +1,19 @@
 // this will talk to the database
 
-
 import CONFIG from "../config";
+import Cookies from "js-cookie";
 
 const api = {
   // database request wrapper ---
 
   // Returns the CSRF token
-  // Can throw an error (if the backend is unreachable)
   async getCsrfToken() {
-    const response = await fetch(`${CONFIG.API_BASE}/csrf/`, {
+    /* const response = await fetch(`${CONFIG.API_BASE}/csrf/`, {
       credentials: 'include',
     });
     const data = await response.json();
-    return data.csrfToken;
+    return data.csrfToken; */
+    return Cookies.get("csrftoken");
   },
 
   // Generic request function
@@ -23,7 +23,7 @@ const api = {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(options.method === "POST" && { "X-CSRFToken": await this.getCsrfToken() }),
+          ...(options.method === "POST" && { "X-CSRFToken": await this.getCsrfToken() }),
         ...options.headers,
       },
     });
@@ -40,16 +40,9 @@ const api = {
     return response.json();
   },
 
-  // Returns the current user's account info (username, display_name, email, date_joined)
-  async getMe() {
-    return await api.request("/auth/me/");
-  },
-
-  // Returns true if user is authenticated
-  // Returns false or throws error otherwise
+  // Returns the current user's ID, if authenticated
   async checkSession() {
-      const response = await api.request("/auth/session/");
-      return response.isAuthenticated;
+      return await api.request("/auth/session/");
   },
 
   // Sends a request to register a user with the given data
@@ -74,39 +67,49 @@ const api = {
   },
 
   // Sends a request to list the current user's scrobbles
-  async getScrobbles() {
-    return await api.request("/user/scrobbles/");
+  async getScrobbles(userId) {
+    return await api.request(`/user/${userId}/scrobbles/`);
   },
 
   // Sends a request to create a scrobble for the current user with the given data
-  async createScrobble(scrobbleData) {
-    return await api.request("/createscrobble/", {
+  async createScrobble(userId, scrobbleData) {
+    return await api.request(`/user/${userId}/scrobbles/`, {
       method: "POST",
       body: JSON.stringify(scrobbleData),
     });
   },
 
+  // Sends a request to get the current user's profile
+  async getProfile(userId) {
+    return await api.request(`/user/${userId}/profile/`);
+  },
+
+  // Sends a request to get the current user's recommendations
+  async getRecommendations(userId) {
+    return await api.request(`/user/${userId}/recommendations/`);
+  },
+
+  // Returns the current user's account info (username, display_name, email, date_joined)
+  async getAbout(userId) {
+    return await api.request(`/user/${userId}/about/`);
+  },
+
+  // Rends a request to set the current user's location
+  async updateLocation(userId, city, country) {
+    return api.request(`/user/${userId}/about/`, {
+      method: "POST",
+      body: JSON.stringify({ "action": "location", city, country }),
+    });
+  },
+
   // Sends a request to get a song's data
-  async getSongData(song_id) {
-    return await api.request(`/song/${song_id}/metadata/`);
+  async getSongData(songId) {
+    return await api.request(`/song/${songId}/metadata/`);
   },
 
   // Sends a request to get a song's cover
-  async getSongCover(song_id) {
-    return await api.request(`/song/${song_id}/cover/`);
-  },
-
-  // Sends a request to get the current user's profile
-  async getProfile() {
-    const request = await api.request("/user/profile/");
-    return request;
-  },
-
-  async updateLocation(lat, lng, city, country) {
-    return api.request("/auth/me", {
-      method: "PUT",
-      body: JSON.stringify({ latitude: lat, longitude: lng, city, country }),
-    });
+  async getSongCover(songId) {
+    return await api.request(`/song/${songId}/cover/`);
   },
 
   async saveMusicProfile(songIds) {
@@ -116,17 +119,10 @@ const api = {
     });
   },
 
-   async likeScrobble(scrobble_id) {
-      return await api.request("/scrobble/like/", {
+   async rateScrobble(scrobble_id, like) {
+      return await api.request(`/scrobble/${scrobble_id}/`, {
         method: "POST",
-        body: JSON.stringify({ scrobble_id }),
-      });
-    },
-
-    async dislikeScrobble(scrobble_id) {
-      return await api.request("/scrobble/dislike/", {
-        method: "POST",
-        body: JSON.stringify({ scrobble_id }),
+        body: JSON.stringify({ like }),
       });
     },
 };

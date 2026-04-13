@@ -1,29 +1,25 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 from .views import (
-    CsrfView,
-    CreateTuttiUserView, LoginTuttiUserView, LogoutTuttiUserView, TuttiUserSessionView, TuttiUserMeView,
-    CreateScrobbleView, ListScrobblesView,
-    TuttiUserProfileView,
-    SongMetadataView, SongCoverView,
-    SongMakeRecommendationView, SongRecommendationsView,
-    ScrobbleLikeView, ScrobbleDislikeView,
+    # CsrfView,
+    TuttiUserRegisterView, TuttiUserLoginView, TuttiUserLogoutView, TuttiUserSessionView,
+    TuttiUserScrobblesView, TuttiUserProfileView, TuttiUserRecommendationsView, TuttiUserAboutView,
+    ScrobbleView,
+    SongMetadataView, SongCoverView, SongRecommendationsView,
 )
 
 urlpatterns = [
-    path('csrf/', CsrfView.as_view()),
-    path('auth/register/', CreateTuttiUserView.as_view()),
-    path('auth/login/', LoginTuttiUserView.as_view()),
-    path('auth/logout/', LogoutTuttiUserView.as_view()),
+    # path('csrf/', CsrfView.as_view()),
+    path('auth/register/', TuttiUserRegisterView.as_view()),
+    path('auth/login/', TuttiUserLoginView.as_view()),
+    path('auth/logout/', TuttiUserLogoutView.as_view()),
     path('auth/session/', TuttiUserSessionView.as_view()),
-    path('auth/me/', TuttiUserMeView.as_view()),
-    path('createscrobble/', CreateScrobbleView.as_view()),
-    path('user/scrobbles/', ListScrobblesView.as_view()),
-    path('user/profile/', TuttiUserProfileView.as_view()),
-    path('song/<int:id>/metadata/', SongMetadataView.as_view()),
-    path('song/<int:id>/cover/', SongCoverView.as_view()),
-    path('song/<int:id>/makerecommendation/', SongMakeRecommendationView.as_view()),
-    path('song/<int:id>/recommendations/', SongRecommendationsView.as_view()),
-    path('scrobble/like/', ScrobbleLikeView.as_view()),
-    path('scrobble/dislike/', ScrobbleDislikeView.as_view()),
+    path('user/<int:user_id>/scrobbles/', TuttiUserScrobblesView.as_view()), # GET for list, POST for create
+    path('user/<int:user_id>/profile/', TuttiUserProfileView.as_view()),
+    path('user/<int:user_id>/recommendations/', TuttiUserRecommendationsView.as_view()),
+    path('user/<int:user_id>/about/', TuttiUserAboutView.as_view()), # GET for retrieval, POST + command for update
+    path('scrobble/<int:scrobble_id>/', ScrobbleView.as_view()),
+    path('song/<int:song_id>/metadata/', SongMetadataView.as_view()),
+    path('song/<int:song_id>/cover/', SongCoverView.as_view()),
+    path('song/<int:song_id>/recommendations/', SongRecommendationsView.as_view()), # GET for list, POST for create
 ]

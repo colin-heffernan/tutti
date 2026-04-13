@@ -11,7 +11,7 @@ import SongSearch from "../components/SongSearch";
 // import { GoogleOAuthButton, AuthDivider } from "../components/GoogleOAuth";
 import { UserIcon, EyeIcon, EyeOffIcon, MapPinIcon, CheckIcon } from "../components/Icons";
 
-function SignUpPage({ onNavigate, onLogin, isLoggedIn }) {
+function SignUpPage({ onNavigate, onLogin, userId }) {
   const [step, setStep] = useState(1);
 
   // fields
@@ -23,6 +23,7 @@ function SignUpPage({ onNavigate, onLogin, isLoggedIn }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const isLoggedIn = userId != -1;
 
   if(isLoggedIn) {
     onNavigate("profile");
@@ -50,7 +51,7 @@ function SignUpPage({ onNavigate, onLogin, isLoggedIn }) {
     if (geo.location) {
       setLoading(true);
       try {
-        await api.updateLocation(geo.location.latitude, geo.location.longitude, geo.location.city, geo.location.country);
+        await api.updateLocation(userId, geo.location.city, geo.location.country);
       } catch (err) {
         console.error("Failed to save location:", err);
       }

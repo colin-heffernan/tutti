@@ -60,11 +60,11 @@
       getScrobbleCover(song_id);
     }, []);
 
-    const handleLike = async () => {
+    const handleRating = async (like) => {
       if (ratingPending) return;
       setRatingPending(true);
       try {
-        const result = await api.likeScrobble(scrobble_id);
+        const result = await api.rateScrobble(scrobble_id, like);
         setRating(result.scrobble.rating);
         onRatingChange?.();
       } catch(err) {
@@ -74,19 +74,8 @@
       }
     };
 
-    const handleDislike = async () => {
-      if (ratingPending) return;
-      setRatingPending(true);
-      try {
-        const result = await api.dislikeScrobble(scrobble_id);
-        setRating(result.scrobble.rating);
-        onRatingChange?.();
-      } catch(err) {
-        // silently revert
-      } finally {
-        setRatingPending(false);
-      }
-    };
+    const handleLike = async () => handleRating(true);
+    const handleDislike = async () => handleRating(false);
 
     const liked = rating === 2;
     const disliked = rating === 0;

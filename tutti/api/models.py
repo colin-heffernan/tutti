@@ -17,10 +17,19 @@ class TuttiUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
+    city = models.CharField(max_length=64, unique=True, null=True)
+    country = models.CharField(max_length=64, unique=True, null=True)
+    private = models.BooleanField(default=True)
+    friends = models.ManyToManyField("self")
     REQUIRED_FIELDS = ["password"]
     USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
     objects = UserManager()
+
+class FriendRequest(models.Model):
+    sent_from = models.ForeignKey(TuttiUser, on_delete=models.CASCADE, related_name="requests_sent")
+    sent_to = models.ForeignKey(TuttiUser, on_delete=models.CASCADE, related_name="requests_received")
+    sent_on = models.DateTimeField(auto_now_add=True)
 
 # inbox = XREF
 # outbox = XREF
@@ -31,6 +40,7 @@ class TuttiUser(AbstractBaseUser, PermissionsMixin):
 class Song(models.Model):
     release_mbid = models.CharField(max_length=36, null=False)
     recording_mbid = models.CharField(max_length=36, null=False)
+    # recommendations = models.ManyToManyField("self", symmetrical=False, related_name="recommended_by")
 
     class Meta:
         constraints = [
@@ -41,8 +51,8 @@ class Song(models.Model):
         ]
 
 class Scrobble(models.Model):
-    song = models.ForeignKey(Song, on_delete=models.CASCADE)
-    tuttiuser = models.ForeignKey(TuttiUser, on_delete=models.CASCADE)
+    song = models.ForeignKey(Song, on_delete=models.CASCADE, related_name="scrobbles")
+    tuttiuser = models.ForeignKey(TuttiUser, on_delete=models.CASCADE, related_name="scrobbles")
     raw_data = models.CharField(max_length=128, null=False)
     rating = models.IntegerField(null=False, default=1)
     time_created = models.DateTimeField(auto_now_add=True)
@@ -50,13 +60,13 @@ class Scrobble(models.Model):
 
 # TODO: Implement further.
 class Recommendation(models.Model):
-    base_song = models.ForeignKey(Song, on_delete=models.CASCADE, related_name="+")
-    recommended_song = models.ForeignKey(Song, on_delete=models.CASCADE)
+    base_song = models.ForeignKey(Song, on_delete=models.CASCADE, related_name="recommendations")
+    recommended_song = models.ForeignKey(Song, on_delete=models.CASCADE, related_name="recommended_by")
     tuttiuser = models.ForeignKey(TuttiUser, on_delete=models.CASCADE)
     time_created = models.DateTimeField(auto_now_add=True)
 
 # TODO: Implement further.
-class RecommendationReaction(models.Model):
-    recommendation = models.ForeignKey(Recommendation, on_delete=models.CASCADE)
-    tuttiuser = models.ForeignKey(TuttiUser, on_delete=models.CASCADE)
-
+# class RecommendationReaction(models.Model):
+#     rating = models.IntegerField(null=False, default=1)
+#     recommendation = models.ForeignKey(Recommendation, on_delete=models.CASCADE, related_name="reactions")
+#     tuttiuser = models.ForeignKey(TuttiUser, on_delete=models.CASCADE, unique=True, related_name="+")

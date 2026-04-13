@@ -1,21 +1,25 @@
   import { useState, useEffect } from "react";
   import THEME from "../theme";
   import api from "../services/api";
+  import Recommendation from "../components/Recommendation";
 
-  function DiscoverPage({ isLoggedIn, onNavigate }) {
+  function DiscoverPage({ userId, onNavigate }) {
     const [profile, setProfile] = useState([]);
     const [overlaps, setOverlaps] = useState([]);
+    const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const isLoggedIn = userId != -1;
+
+    if (!isLoggedIn) {
+      onNavigate("login");
+      return;
+    }
 
     useEffect(() => {
-      if (!isLoggedIn) {
-        onNavigate("login");
-        return;
-      }
       const fetchProfile = async () => {
         try {
-          const response = await api.getProfile();
+          const response = await api.getProfile(userId);
           const userProfile = Object.entries(response.profile).sort((a, b) => {
             if(a[1] > b[1]) {
               return -1;
@@ -36,6 +40,18 @@
           setError(err.message);
         } finally {
           setLoading(false);
+        }
+      };
+      fetchProfile();
+    }, []);
+
+    useEffect(() => {
+      const fetchProfile = async () => {
+        try {
+          const response = await api.getRecommendations(userId);
+          setRecommendations(response);
+        } catch (err) {
+          setError(err.message);
         }
       };
       fetchProfile();
@@ -97,9 +113,14 @@
             padding: "48px 40px", borderRadius: THEME.radius.md, background: THEME.bgCard,
             textAlign: "center", border: `1px dashed ${THEME.border}`,
           }}>
-            <p style={{ fontFamily: THEME.fontBody, fontSize: 16, color: THEME.textSecondary, lineHeight: 1.6 }}>
+            {!recommendations && (<p style={{ fontFamily: THEME.fontBody, fontSize: 16, color: THEME.textSecondary, lineHeight: 1.6 }}>
               Song recommendations based on your taste (need to be implemented).
-            </p>
+            </p>)}
+            {recommendations && (<ul style={{"listStyleType": "none"}}>
+              {recommendations.map((recommendation) => (<li key={recommendation.id}>
+                <Recommendation base_song={recommendation.base_song} recommended_song={recommendation.recommended_song} />
+              </li>))}
+            </ul>)}
           </div>
         </div>
       </div>

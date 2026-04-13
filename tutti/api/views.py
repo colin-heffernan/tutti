@@ -5,31 +5,36 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from rest_framework import generics, status
-from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, ListCreateAPIView
+from rest_framework.mixins import UpdateModelMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import SessionAuthentication
-from .serializers import TuttiUserSerializer, ScrobbleSerializer, RecommendationSerializer
+from .serializers import TuttiUserSerializer, ScrobbleSerializer, SongSerializer, RecommendationSerializer
 from .musicbrainz import getMetadata, getCover
-from .models import Scrobble, Recommendation, Song
+from .models import Scrobble, Song, Recommendation
 import json
 import datetime
 import math
 
 # Create your views here.
+# Generally, follow [Object][Verb]View (e.g. [TuttiUser][Register]View)
 TuttiUser = get_user_model()
 
-class TuttiUserView(ListAPIView):
-    queryset = TuttiUser.objects.all()
-    serializer_class = TuttiUserSerializer
+# Get CSRF token
+# class CsrfView(APIView):
+#     def get(self, request):
+#         return Response({"csrfToken": get_token(request)})
 
-class CreateTuttiUserView(CreateAPIView):
+# Register user
+class TuttiUserRegisterView(CreateAPIView):
     model = TuttiUser
     permission_classes = [AllowAny]
     serializer_class = TuttiUserSerializer
 
-class LoginTuttiUserView(APIView):
+# Login user
+class TuttiUserLoginView(APIView):
     def post(self, request):
         user = authenticate(
             request,
@@ -38,52 +43,63 @@ class LoginTuttiUserView(APIView):
         )
         if user:
             login(request, user)
-            return Response({"status": "Logged in"})
+            return Response({"user_id": user.id})
         return Response({"status": "Invalid credentials"}, status=403)
 
-class LogoutTuttiUserView(APIView):
+# Logout user
+class TuttiUserLogoutView(APIView):
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     def get(self, request):
         logout(request)
         return Response({"status": "Logged out"})
 
-class CsrfView(APIView):
-    def get(self, request):
-        return Response({"csrfToken": get_token(request)})
-
+# User session status
 class TuttiUserSessionView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        return Response({"isAuthenticated": True})
+        return Response({"user_id": request.user.id})
 
-class TuttiUserMeView(APIView):
+# User scrobbles
+class TuttiUserScrobblesView(ListCreateAPIView):
+    model = Scrobble
     authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
-    def get(self, request):
-        user = request.user
-        return Response({
-            "username": user.username,
-            "display_name": user.display_name,
-            "email": user.email,
-            "date_joined": user.date_joined,
-        })
-
-class ListScrobblesView(ListAPIView):
-    queryset = Scrobble.objects.all()
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = ScrobbleSerializer
-    def list(self, request):
-        queryset = Scrobble.objects.filter(tuttiuser=self.request.user.id)
-        serializer = ScrobbleSerializer(queryset, many=True)
-        return Response(serializer.data)
 
+    # Define the queryset for the list
+    def get_queryset(self):
+        try:
+            user = TuttiUser.objects.get(id=self.kwargs["user_id"])
+        except TuttiUser.DoesNotExist:
+            return []
+        if user != self.request.user and user.private:
+            return []
+        return user.scrobbles
+
+    # Create a scrobble
+    def perform_create(self, serializer):
+        try:
+            user = TuttiUser.objects.get(id=self.kwargs["user_id"])
+        except TuttiUser.DoesNotExist:
+            return Response({"status": "User does not exist."}, status=404)
+        if user != self.request.user:
+            return Response({"status": "User does not exist."}, status=404)
+        serializer.save(user=user)
+
+# User listening profile
 class TuttiUserProfileView(APIView):
     authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
-    def get(self, request):
-        scrobbles = Scrobble.objects.filter(tuttiuser=self.request.user.id, time_created__gte=(timezone.now() - datetime.timedelta(180)))
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get(self, request, user_id):
+        try:
+            user = TuttiUser.objects.get(id=user_id)
+        except TuttiUser.DoesNotExist:
+            return Response({"status": "User does not exist."}, status=404)
+        if user != request.user and user.private:
+            return Response({"status": "User does not exist."}, status=404)
+        scrobbles = Scrobble.objects.filter(tuttiuser=user_id, time_created__gte=(timezone.now() - datetime.timedelta(180)))
         tags = {}
         tag_overlaps = {}
         for scrobble in scrobbles:
@@ -119,22 +135,68 @@ class TuttiUserProfileView(APIView):
             overlaps[overlap_tag] = dict(filter(lambda x: x[1] != {}, overlaps[overlap_tag].items()))
         return Response({"profile": tags, "overlaps": overlaps})
 
-class CreateScrobbleView(CreateAPIView):
-    model = Scrobble
-    serializer_class = ScrobbleSerializer
+# User recommendations
+class TuttiUserRecommendationsView(ListAPIView):
+    model = Recommendation
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = RecommendationSerializer
+
+    # Define the queryset for the list
+    def get_queryset(self):
+        try:
+            user = TuttiUser.objects.get(id=self.kwargs["user_id"])
+        except TuttiUser.DoesNotExist:
+            return []
+        if user != self.request.user and user.private:
+            return []
+        return Recommendation.objects.filter(base_song__scrobbles__tuttiuser=user).distinct()
+
+# User about
+class TuttiUserAboutView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+
+    # Get user data
+    def get(self, request, user_id):
+        try:
+            user = TuttiUser.objects.get(id=user_id)
+        except TuttiUser.DoesNotExist:
+            return Response({"status": "User does not exist."}, status=404)
+        if user != request.user and user.private:
+            return Response({"status": "User does not exist."}, status=404)
+        return Response({
+            "username": user.username,
+            "display_name": user.display_name,
+            "email": user.email,
+            "date_joined": user.date_joined,
+            "city": user.city,
+            "country": user.country,
+            "private": user.private,
+        })
+
+    # Update user data
+    def post(self, request, user_id):
+        try:
+            user = TuttiUser.objects.get(id=user_id)
+        except TuttiUser.DoesNotExist:
+            return Response({"status": "User does not exist."}, status=404)
+        if user_id != request.user.id:
+            return Response({"status": "User does not exist."}, status=404)
+        action = request.data["action"]
+        match action:
+            case "location":
+                user.city = request.data["city"]
+                user.country = request.data["country"]
+                user.save()
+                serializer = TuttiUserSerializer(user)
+                return Response({"about": serializer.data})
 
 class SongMetadataView(APIView):
     @method_decorator(cache_page(60 * 15))
-    def get(self, _request, id):
-        song_query = Song.objects.filter(id=id)
-        if song_query.count() < 1:
-            return Response({"error": "Song does not exist."}, status=404)
-        song = song_query[0]
+    def get(self, _request, song_id):
         try:
+            song = Song.objects.get(id=song_id)
             release = getMetadata("release", f"reid:\"{song.release_mbid}\"", 1)
             recording = getMetadata("recording", f"rid:\"{song.recording_mbid}\"", 1)
             return Response({
@@ -142,76 +204,67 @@ class SongMetadataView(APIView):
                 "artist": recording["recordings"][0]["artist-credit"][0]["name"],
                 "title": recording["recordings"][0]["title"],
             })
+        except Song.DoesNotExist:
+            return Response({"error": "Song does not exist."}, status=404)
         except Exception:
             return Response({"error": "Could not fetch song metadata."}, status=503)
 
 class SongCoverView(APIView):
     @method_decorator(cache_page(60 * 15))
-    def get(self, _, id):
-        song_query = Song.objects.filter(id=id)
-        if song_query.count() < 1:
-            return Response({"error": "Song does not exist."}, status=404)
-        song = song_query[0]
+    def get(self, _, song_id):
         try:
+            song = Song.objects.get(id=song_id)
             cover = getCover(song.release_mbid)
             return Response({
                 "cover": cover,
             })
+        except Song.DoesNotExist:
+            return Response({"error": "Song does not exist."}, status=404)
         except Exception:
             return Response({"error": "Could not fetch song cover."}, status=503)
 
-class ScrobbleLikeView(APIView):
+class ScrobbleView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    def post(self, request):
-        scrobble_id = request.data.get("scrobble_id")
-        scrobble_query = Scrobble.objects.filter(id=scrobble_id)
-        if scrobble_query.count() < 1:
-            return Response({"error": "Could not edit scrobble"}, status_code=404)
-        scrobble = scrobble_query[0]
+    def post(self, request, scrobble_id):
+        # Check if scrobble exists
+        try:
+            scrobble = Scrobble.objects.get(id=scrobble_id)
+        except Scrobble.DoesNotExist:
+            return Response({"error": "Scrobble does not exist."}, status_code=404)
+
+        # Check if request is from correct user
         if scrobble.tuttiuser != request.user:
             return Response({"error": "Could not edit scrobble"}, status_code=404)
-        scrobble.rating = 1 if scrobble.rating == 2 else 2
+
+        # Like if liked, dislike if disliked
+        if request.data["like"] == True:
+            scrobble.rating = 1 if scrobble.rating == 2 else 2
+        elif request.data["like"] == False:
+            scrobble.rating = 1 if scrobble.rating == 0 else 0
         scrobble.save()
         serializer = ScrobbleSerializer(scrobble)
         return Response({"scrobble": serializer.data})
 
-class ScrobbleDislikeView(APIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
-    def post(self, request):
-        scrobble_id = request.data.get("scrobble_id")
-        scrobble_query = Scrobble.objects.filter(id=scrobble_id)
-        if scrobble_query.count() < 1:
-            return Response({"error": "Could not edit scrobble"}, status_code=404)
-        scrobble = scrobble_query[0]
-        if scrobble.tuttiuser != request.user:
-            return Response({"error": "Could not edit scrobble"}, status_code=404)
-        scrobble.rating = 1 if scrobble.rating == 0 else 0
-        scrobble.save()
-        serializer = ScrobbleSerializer(scrobble)
-        return Response({"scrobble": serializer.data})
-
-class SongMakeRecommendationView(CreateAPIView):
+class SongRecommendationsView(ListCreateAPIView):
     model = Recommendation
     serializer_class = RecommendationSerializer
     authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
-    def perform_create(self, serializer):
-        base_song_query = Song.objects.filter(id=self.kwargs["id"])
-        if base_song_query.count() < 1:
-            return Response({"error": "Base song does not exist."}, status=404)
-        base_song = base_song_query[0]
-        serializer.save(user=self.request.user, base_song=base_song)
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-class SongRecommendationsView(ListAPIView):
-    queryset = Recommendation.objects.all()
-    serializer_class = RecommendationSerializer
-    def list(self, _, id):
-        song_query = Song.objects.filter(id=id)
-        if song_query.count() < 1:
+    # Define the queryset for the list
+    def get_queryset(self):
+        try:
+            song = Song.objects.get(id=self.kwargs["song_id"])
+        except Song.DoesNotExist:
+            return []
+        return Recommendation.objects.filter(base_song=song)
+
+    # Create a recommendation
+    def perform_create(self, serializer):
+        try:
+            base_song = Song.objects.get(id=self.kwargs["song_id"])
+            recommended_song = Song.objects.get(id=self.request.data["rec_id"])
+        except Song.DoesNotExist:
             return Response({"error": "Song does not exist."}, status=404)
-        song = song_query[0]
-        queryset = Recommendation.objects.filter(base_song=song)
-        serializer = RecommendationSerializer(queryset, many=True)
-        return Response(serializer.data)
+        serializer.save(base_song=base_song, recommended_song=recommended_song, tuttiuser=self.request.user)

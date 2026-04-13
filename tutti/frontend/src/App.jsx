@@ -12,37 +12,46 @@ import NetworkPage from "./pages/NetworkPage";
 //state of login for page access
 function App() {
   const [currentPage, setCurrentPage] = useState("login");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState(-1);
+  const [loading, setLoading] = useState(true);
 
   // Check for existing session
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const isAuthenticated = await api.checkSession();
-        setIsLoggedIn(isAuthenticated);
+        const response = await api.checkSession();
+        setUserId(response.user_id);
+        // setIsLoggedIn(isAuthenticated);
         setCurrentPage("home");
       } catch(err) {
-        setIsLoggedIn(false);
+        setUserId(-1);
+      } finally {
+        setLoading(false);
       }
     };
     checkSession();
   }, []);
 
-  const handleLogin = () => setIsLoggedIn(true);
+  const handleLogin = (newUserId) => setUserId(newUserId);
 
-  const handleLogout = () => setIsLoggedIn(false);
+  const handleLogout = () => setUserId(-1);
 
   return (
     <div style={{ minHeight: "100vh", background: THEME.bg }}>
-      <Navbar currentPage={currentPage} onNavigate={setCurrentPage} isLoggedIn={isLoggedIn} />
+      <Navbar currentPage={currentPage} onNavigate={setCurrentPage} userId={userId} />
 
       <main style={{ /*padding: "0 16px",*/ paddingBottom: 60 }}>
-        {currentPage === "login" && <LoginPage onNavigate={setCurrentPage} onLogin={handleLogin} isLoggedIn={isLoggedIn} />}
-        {currentPage === "signup" && <SignUpPage onNavigate={setCurrentPage} onLogin={handleLogin} isLoggedIn={isLoggedIn} />}
-        {currentPage === "home" && <ActivityFeed onNavigate={setCurrentPage} onLogout={handleLogout} isLoggedIn={isLoggedIn} />}
-        {currentPage === "discover" && <DiscoverPage onNavigate={setCurrentPage} isLoggedIn={isLoggedIn} />}
-        {currentPage === "network" && <NetworkPage onNavigate={setCurrentPage} isLoggedIn={isLoggedIn} />}
-        {currentPage === "profile" && <Profile onNavigate={setCurrentPage} onLogout={handleLogout} isLoggedIn={isLoggedIn} />}
+        {loading && <>
+          <h1>Loading...</h1>
+        </>}
+        {!loading && <>
+          {currentPage === "login" && <LoginPage onNavigate={setCurrentPage} onLogin={handleLogin} userId={userId} />}
+          {currentPage === "signup" && <SignUpPage onNavigate={setCurrentPage} onLogin={handleLogin} userId={userId} />}
+          {currentPage === "home" && <ActivityFeed onNavigate={setCurrentPage} userId={userId} />}
+          {currentPage === "discover" && <DiscoverPage onNavigate={setCurrentPage} userId={userId} />}
+          {currentPage === "network" && <NetworkPage onNavigate={setCurrentPage} userId={userId} />}
+          {currentPage === "profile" && <Profile onNavigate={setCurrentPage} onLogout={handleLogout} userId={userId} />}
+        </>}
       </main>
     </div>
   );

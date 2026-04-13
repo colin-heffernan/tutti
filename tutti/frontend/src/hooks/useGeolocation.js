@@ -1,11 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import CONFIG from "../config";
+import api from "../services/api";
 
 // Wraps the browser Geolocation API and reverse-geocodes via Nominatim (free).
-function useGeolocation() {
+function useGeolocation(userId = -1) {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchAbout = async () => {
+      try {
+        const data = await api.getAbout(userId);
+        setLocation({ city: data.city, country: data.country });
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    if(userId != -1) fetchAbout();
+  }, [userId]);
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -26,8 +39,6 @@ function useGeolocation() {
           );
           const data = await response.json();
           setLocation({
-            latitude,
-            longitude,
             city: data.address?.city || data.address?.town || data.address?.village || "Unknown",
             country: data.address?.country || "Unknown",
             displayName: data.display_name,

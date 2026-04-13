@@ -4,19 +4,20 @@ import api from "../services/api";
 import Scrobble from "../components/Scrobble";
 import GenreForceMap from "../components/GenreForceMap";
 
-function ActivityFeed({ onNavigate, onLogout, isLoggedIn }) {
+function ActivityFeed({ onNavigate, userId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scrobbles, setScrobbles] = useState([]);
   const [profile, setProfile] = useState([]);
   const [overlaps, setOverlaps] = useState({});
+  const isLoggedIn = userId != -1;
 
   // Fetch user scrobbles and genre profile in parallel
   const fetchScrobbles = async () => {
     try {
       const [userScrobbles, profileData] = await Promise.all([
-        api.getScrobbles(),
-        api.getProfile(),
+        api.getScrobbles(userId),
+        api.getProfile(userId),
       ]);
       setScrobbles(userScrobbles);
       // Sort genres descending by score so slice(0, 25) gives top 25
@@ -154,7 +155,7 @@ function ActivityFeed({ onNavigate, onLogout, isLoggedIn }) {
       // TODO: Set this based on passed-in args
       let scrobbleData = testScrobbles[Math.floor(Math.random() * testScrobbles.length)];
       console.log(scrobbleData)
-      let scrobble = await api.createScrobble(scrobbleData);
+      let scrobble = await api.createScrobble(userId, scrobbleData);
       console.log(scrobble);
       setScrobbles([...scrobbles, scrobble]);
       setError(null);

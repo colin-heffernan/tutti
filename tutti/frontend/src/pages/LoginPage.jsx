@@ -7,12 +7,13 @@ import PrimaryButton from "../components/PrimaryButton";
 import { UserIcon, EyeIcon, EyeOffIcon } from "../components/Icons";
 
 //username and password elements
-function LoginPage({ onNavigate, onLogin, isLoggedIn }) {
+function LoginPage({ onNavigate, onLogin, userId }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const isLoggedIn = userId != -1;
 
   if(isLoggedIn) {
     onNavigate("profile");
@@ -23,8 +24,8 @@ function LoginPage({ onNavigate, onLogin, isLoggedIn }) {
     if (!username || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
-      await api.login({ username, password });
-      onLogin();
+      let response = await api.login({ username, password });
+      onLogin(response.user_id);
       onNavigate("home");
     } catch (err) {
       setError(err.message || "Login failed. Please check your credentials.");

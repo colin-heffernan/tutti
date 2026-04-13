@@ -106,25 +106,9 @@ class ScrobbleSerializer(serializers.ModelSerializer):
         fields = ['id', 'song_id', 'tuttiuser', 'time_created', 'time_updated', 'rating', 'artist', 'album', 'title', 'date', 'track', 'num_tracks']
 
 class RecommendationSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
     base_song = serializers.PrimaryKeyRelatedField(read_only=True)
     recommended_song = serializers.PrimaryKeyRelatedField(read_only=True)
     tuttiuser = serializers.PrimaryKeyRelatedField(read_only=True)
-    artist = serializers.CharField(write_only=True)
-    album = serializers.CharField(write_only=True)
-    title = serializers.CharField(write_only=True)
-    date = serializers.CharField(write_only=True)
-    track = serializers.IntegerField(write_only=True)
-    num_tracks = serializers.IntegerField(write_only=True)
-    def create(self, validated_data):
-        base_song = validated_data["base_song"]
-        recommended_song = find_or_create_song(validated_data["album"], validated_data["date"], validated_data["num_tracks"], validated_data["title"], validated_data["artist"], validated_data["track"])
-        return Recommendation.objects.create(
-            base_song=base_song,
-            recommended_song=recommended_song,
-            tuttiuser=validated_data["user"],
-        )
-
     class Meta:
         model = Recommendation
-        fields = ['id', 'base_song', 'recommended_song', 'tuttiuser', 'time_created', 'artist', 'album', 'title', 'date', 'track', 'num_tracks']
+        fields = ['id', 'base_song', 'recommended_song', 'tuttiuser', 'time_created']
