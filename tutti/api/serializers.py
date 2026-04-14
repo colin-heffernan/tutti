@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from .musicbrainz import searchMetadata
-from .models import Scrobble, Song, Recommendation
+from .models import Scrobble, Song, Recommendation, FriendRequest
 import json
 import re
 
@@ -62,6 +62,11 @@ class TuttiUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = TuttiUser
         fields = ['id', 'username', 'display_name', 'email', 'password', 'date_joined', 'confirm_password']
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ['sent_from', 'sent_to', 'sent_on']
 
 class SongSerializer(serializers.ModelSerializer):
     class Meta:

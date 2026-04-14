@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import SessionAuthentication
-from .serializers import TuttiUserSerializer, ScrobbleSerializer, SongSerializer, RecommendationSerializer
+from .serializers import TuttiUserSerializer, ScrobbleSerializer, SongSerializer, RecommendationSerializer, FriendRequestSerializer
 from .musicbrainz import fetchMetadata, fetchCover
 from .models import Scrobble, Song, Recommendation, FriendRequest
 import json
@@ -224,6 +224,31 @@ class TuttiUserFriendsView(ListAPIView):
             return []
         return user.friends
 
+# User friends
+class TuttiUserFriendRequestsView(ListAPIView):
+    model = FriendRequest
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = FriendRequestSerializer
+
+    # Define the queryset for the list
+    def get_queryset(self):
+        try:
+            user = TuttiUser.objects.get(id=self.kwargs["user_id"])
+        except TuttiUser.DoesNotExist:
+            return []
+        if user != self.request.user and user.private:
+            return []
+        slug = self.kwargs["slug"]
+        match slug:
+            case "inbound":
+                return user.requests_received
+            case "outbound":
+                return user.requests_sent
+            case _:
+                return []
+
+# Add friend
 class TuttiUserAddView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
