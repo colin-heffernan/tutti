@@ -61,6 +61,20 @@ class TuttiUserSessionView(APIView):
     def get(self, request):
         return Response({"user_id": request.user.id})
 
+# Delete user
+class TuttiUserDeleteView(APIView):
+    def post(self, request):
+        user = authenticate(
+            request,
+            username=request.user.username,
+            password=request.data.get("password"),
+        )
+        if user:
+            logout(request)
+            user.delete()
+            return Response({"status": "Account deleted"})
+        return Response({"status": "Invalid credentials"}, status=403)
+
 # User scrobbles
 class TuttiUserScrobblesView(ListCreateAPIView):
     model = Scrobble

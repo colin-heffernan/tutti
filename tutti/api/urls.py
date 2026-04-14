@@ -2,9 +2,13 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from .views import (
     # CsrfView,
-    TuttiUserRegisterView, TuttiUserLoginView, TuttiUserLogoutView, TuttiUserSessionView,
+    # Auth views
+    TuttiUserRegisterView, TuttiUserLoginView, TuttiUserLogoutView, TuttiUserSessionView, TuttiUserDeleteView,
+    # User content views
     TuttiUserScrobblesView, TuttiUserProfileView, TuttiUserRecommendationsView, TuttiUserAboutView,
+    # Scrobble views
     ScrobbleView,
+    # Song views
     SongMetadataView, SongCoverView, SongRecommendationsView,
 )
 
@@ -14,6 +18,7 @@ urlpatterns = [
     path('auth/login/', TuttiUserLoginView.as_view()),
     path('auth/logout/', TuttiUserLogoutView.as_view()),
     path('auth/session/', TuttiUserSessionView.as_view()),
+    path('auth/delete/', TuttiUserDeleteView.as_view()),
     path('user/<int:user_id>/scrobbles/', TuttiUserScrobblesView.as_view()), # GET for list, POST for create
     path('user/<int:user_id>/profile/', TuttiUserProfileView.as_view()),
     path('user/<int:user_id>/recommendations/', TuttiUserRecommendationsView.as_view()),
