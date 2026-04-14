@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticate
 from rest_framework.authentication import SessionAuthentication
 from .serializers import TuttiUserSerializer, ScrobbleSerializer, SongSerializer, RecommendationSerializer
 from .musicbrainz import getMetadata, getCover
-from .models import Scrobble, Song, Recommendation
+from .models import Scrobble, Song, Recommendation, FriendRequest
 import json
 import datetime
 import math
@@ -205,6 +205,46 @@ class TuttiUserAboutView(APIView):
                 user.save()
                 serializer = TuttiUserSerializer(user)
                 return Response({"about": serializer.data})
+
+# User friends
+class TuttiUserFriendsView(ListAPIView):
+    model = TuttiUser
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = TuttiUserSerializer
+
+    # Define the queryset for the list
+    def get_queryset(self):
+        try:
+            user = TuttiUser.objects.get(id=self.kwargs["user_id"])
+        except TuttiUser.DoesNotExist:
+            return []
+        if user != self.request.user and user.private:
+            return []
+        return user.friends
+
+class TuttiUserAddView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        # Check if the user exists
+        try:
+            user = TuttiUser.objects.get(id=user_id)
+        except TuttiUser.DoesNotExist:
+            return Response({"status": "User does not exist."}, status=404)
+
+        # Use a nice try-catch to figure out if the request already exists
+        try:
+            friend_request = request.user.requests_received.get(sent_from=user)
+            request.user.friends.add(user)
+            user.friends.add(request.user)
+            friend_request.delete()
+            return Response({"status": f"Friend request from user {user.id} accepted"})
+        except FriendRequest.DoesNotExist:
+            friend_request = FriendRequest(sent_from=request.user, sent_to=user)
+            friend_request.save()
+            return Response({"status": f"Friend request sent to user {user.id}"})
 
 class SongMetadataView(APIView):
     @method_decorator(cache_page(60 * 15))

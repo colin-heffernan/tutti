@@ -6,6 +6,8 @@ from .views import (
     TuttiUserRegisterView, TuttiUserLoginView, TuttiUserLogoutView, TuttiUserSessionView, TuttiUserDeleteView,
     # User content views
     TuttiUserScrobblesView, TuttiUserProfileView, TuttiUserRecommendationsView, TuttiUserAboutView,
+    # Friend views
+    TuttiUserFriendsView, # TuttiUserAddView,
     # Scrobble views
     ScrobbleView,
     # Song views
@@ -23,6 +25,8 @@ urlpatterns = [
     path('user/<int:user_id>/profile/', TuttiUserProfileView.as_view()),
     path('user/<int:user_id>/recommendations/', TuttiUserRecommendationsView.as_view()),
     path('user/<int:user_id>/about/', TuttiUserAboutView.as_view()), # GET for retrieval, POST + command for update
+    path('user/<int:user_id>/friends/', TuttiUserFriendsView.as_view()),
+    # path('user/<int:user_id>/add/', TuttiUserAddView.as_view()), # FIXME: Add friend
     path('scrobble/<int:scrobble_id>/', ScrobbleView.as_view()),
     path('song/<int:song_id>/metadata/', SongMetadataView.as_view()),
     path('song/<int:song_id>/cover/', SongCoverView.as_view()),
