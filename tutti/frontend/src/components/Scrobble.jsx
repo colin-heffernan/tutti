@@ -3,28 +3,28 @@
   import api from "../services/api";
   import { ThumbsUpIcon, ThumbsDownIcon, MusicIcon, ChevronDownIcon } from "./Icons";
 
-  const STREAMING_SERVICES = [
-    {
+  const STREAMING_SERVICES = {
+    "spotify": {
       label: "Spotify",
       color: "#1DB954",
-      getUrl: (artist, title) =>
-        `https://open.spotify.com/search/${encodeURIComponent(`${artist} ${title}`)}`,
+      // getUrl: (artist, title) =>
+      //   `https://open.spotify.com/search/${encodeURIComponent(`${artist} ${title}`)}`,
     },
-    {
+    "appleMusic": {
       label: "Apple Music",
       color: "#FC3C44",
-      getUrl: (artist, title) =>
-        `https://music.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}`,
+      // getUrl: (artist, title) =>
+      //   `https://music.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}`,
     },
-    {
+    "youtube": {
       label: "YouTube",
       color: "#FF0000",
-      getUrl: (artist, title) =>
-        `https://www.youtube.com/results?search_query=${encodeURIComponent(`${artist} ${title}`)}`,
+      // getUrl: (artist, title) =>
+      //   `https://www.youtube.com/results?search_query=${encodeURIComponent(`${artist} ${title}`)}`,
     },
-  ];
+  };
 
-  // streamingLinks prop accepts { spotify, appleMusic, youtube } explicit URLs.
+  // streamingLinks prop accepts { spotify, applemusic, youtube } explicit URLs.
   // If a key is absent, a search URL is generated. If a key is an empty string, that service is hidden.
   function StreamingDropdown({ artist, title, streamingLinks = {} }) {
     const [open, setOpen] = useState(false);
@@ -41,15 +41,19 @@
       return () => document.removeEventListener("mousedown", handler);
     }, [open]);
 
-    const links = STREAMING_SERVICES.map((svc) => {
-      const explicitUrl = streamingLinks[svc.label.toLowerCase().replace(" ", "")];
-      // explicit empty string → hide; explicit URL → use it; absent → generate search URL
-      const url =
-        explicitUrl === ""
-          ? ""
-          : explicitUrl || (artist && title ? svc.getUrl(artist, title) : "");
-      return { ...svc, url };
-    }).filter((l) => l.url);
+    // const links = STREAMING_SERVICES.map((svc) => {
+    //   const explicitUrl = streamingLinks[svc.label.toLowerCase().replace(" ", "")];
+    //   // explicit empty string → hide; explicit URL → use it; absent → generate search URL
+    //   const url =
+    //     explicitUrl === ""
+    //       ? ""
+    //       : explicitUrl || (artist && title ? svc.getUrl(artist, title) : "");
+    //   return { ...svc, url };
+    // }).filter((l) => l.url);
+    const links = streamingLinks.map((linkItem) => {
+      const service = STREAMING_SERVICES[linkItem[1]];
+      return { ...service, "url": linkItem[0] };
+    });
 
     if (!links.length) return null;
 
@@ -205,7 +209,7 @@
           </p>
         </div>
         {!dataLoading && (
-          <StreamingDropdown artist={data.artist} title={data.title} />
+          <StreamingDropdown artist={data.artist} title={data.title} streamingLinks={data.links} />
         )}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <button

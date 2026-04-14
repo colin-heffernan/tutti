@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from .musicbrainz import getMetadata, cacheMetadata
+from .musicbrainz import searchMetadata
 from .models import Scrobble, Song, Recommendation
 import json
 import re
@@ -10,15 +10,11 @@ TuttiUser = get_user_model()
 
 def find_or_create_song(album, date, num_tracks, title, artist, track):
     release_query = f"\"{album}\" AND date:\"{date}\" AND tracks:\"{num_tracks}\""
-    release_mbid = None
-    recording_mbid = None
-    release = getMetadata("release", release_query, 1)
+    release = searchMetadata("release", release_query, 1, inc="release-groups")
     release_mbid = release["releases"][0]["id"]
     recording_query = f"\"{title}\" AND artist:\"{artist}\" AND tnum:\"{track}\" AND reid:\"{release_mbid}\""
-    recording = getMetadata("recording", recording_query, 1)
+    recording = searchMetadata("recording", recording_query, 1, inc="artist-credits+genres+url-rels")
     recording_mbid = recording["recordings"][0]["id"]
-    cacheMetadata("release", f"reid:\"{release_mbid}\"", release)
-    cacheMetadata("recording", f"rid:\"{recording_mbid}\"", recording)
     song_query = Song.objects.filter(
         release_mbid=release_mbid,
         recording_mbid=recording_mbid,

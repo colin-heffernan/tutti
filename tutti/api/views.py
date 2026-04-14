@@ -12,11 +12,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import SessionAuthentication
 from .serializers import TuttiUserSerializer, ScrobbleSerializer, SongSerializer, RecommendationSerializer
-from .musicbrainz import getMetadata, getCover
+from .musicbrainz import fetchMetadata, fetchCover
 from .models import Scrobble, Song, Recommendation, FriendRequest
 import json
 import datetime
 import math
+import re
 
 # Create your views here.
 # Generally, follow [Object][Verb]View (e.g. [TuttiUser][Register]View)
@@ -122,8 +123,8 @@ class TuttiUserProfileView(APIView):
                 age = timezone.now().date() - date
                 rating = scrobble.rating
                 weight = 180 - (3 - rating) if rating > 0 else 0
-                recording = getMetadata("recording", f"rid:\"{scrobble.song.recording_mbid}\"", 1)
-                recording_tags = recording["recordings"][0]["tags"]
+                recording = fetchMetadata("recording", scrobble.song.recording_mbid, inc="artist-credits+genres+url-rels")
+                recording_tags = recording["genres"]
                 song_tags = []
                 for recording_tag in sorted(recording_tags, key=lambda x: x["name"]):
                     tag_name = recording_tag["name"]
@@ -251,12 +252,37 @@ class SongMetadataView(APIView):
     def get(self, _request, song_id):
         try:
             song = Song.objects.get(id=song_id)
-            release = getMetadata("release", f"reid:\"{song.release_mbid}\"", 1)
-            recording = getMetadata("recording", f"rid:\"{song.recording_mbid}\"", 1)
+            release = fetchMetadata("release", song.release_mbid, inc="release-groups")
+            recording = fetchMetadata("recording", song.recording_mbid, inc="artist-credits+genres+url-rels")
+            links = []
+            for relation in recording["relations"]:
+                # Make sure the relation is a streaming URL
+                if relation["target-type"] != "url" or "streaming" not in relation["type"]:
+                    continue
+
+                # Match the URL against a regex
+                url = relation["url"]["resource"]
+                target_urls = ["spotify.com", "youtube.com", "music.apple.com"]
+                url_regex = f"({"|".join(target_urls).replace(".", "\\.")})"
+                res = re.search(url_regex, url)
+                if res:
+                    match_url = res.group()
+                    site = ""
+                    match match_url:
+                        case "spotify.com":
+                            site = "spotify"
+                        case "youtube.com":
+                            site = "youtube"
+                        case "music.apple.com":
+                            site = "appleMusic"
+                    if site in [link[1] for link in links]:
+                        continue
+                    links.append((url, site))
             return Response({
-                "album": release["releases"][0]["title"],
-                "artist": recording["recordings"][0]["artist-credit"][0]["name"],
-                "title": recording["recordings"][0]["title"],
+                "album": release["title"],
+                "artist": recording["artist-credit"][0]["name"],
+                "title": recording["title"],
+                "links": links,
             })
         except Song.DoesNotExist:
             return Response({"error": "Song does not exist."}, status=404)
@@ -268,7 +294,7 @@ class SongCoverView(APIView):
     def get(self, _, song_id):
         try:
             song = Song.objects.get(id=song_id)
-            cover = getCover(song.release_mbid)
+            cover = fetchCover(song.release_mbid)
             return Response({
                 "cover": cover,
             })
