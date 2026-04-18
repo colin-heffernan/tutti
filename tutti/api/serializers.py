@@ -11,10 +11,10 @@ TuttiUser = get_user_model()
 def find_or_create_song(album, date, num_tracks, title, artist, track):
     release_query = f"\"{album}\" AND date:\"{date}\" AND tracks:\"{num_tracks}\""
     release = searchMetadata("release", release_query, 1, inc="release-groups")
-    release_mbid = release["releases"][0]["id"]
+    release_mbid = release["id"]
     recording_query = f"\"{title}\" AND artist:\"{artist}\" AND tnum:\"{track}\" AND reid:\"{release_mbid}\""
     recording = searchMetadata("recording", recording_query, 1, inc="artist-credits+genres+url-rels")
-    recording_mbid = recording["recordings"][0]["id"]
+    recording_mbid = recording["id"]
     song_query = Song.objects.filter(
         release_mbid=release_mbid,
         recording_mbid=recording_mbid,
