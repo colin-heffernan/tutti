@@ -26,7 +26,7 @@
 
   // streamingLinks prop accepts { spotify, applemusic, youtube } explicit URLs.
   // If a key is absent, a search URL is generated. If a key is an empty string, that service is hidden.
-  function StreamingDropdown({ artist, title, streamingLinks = {} }) {
+  function StreamingDropdown({ artist, title, streamingLinks = [] }) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef(null);
 
