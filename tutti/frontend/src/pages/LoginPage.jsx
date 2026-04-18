@@ -24,7 +24,7 @@ function LoginPage({ onNavigate, onLogin, userId }) {
     if (!username || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     try {
-      let response = await api.login({ username, password });
+      const response = await api.login({ username, password });
       onLogin(response.user_id);
       onNavigate("home");
     } catch (err) {
