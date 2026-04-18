@@ -12,7 +12,10 @@ function useGeolocation(userId = -1) {
     const fetchAbout = async () => {
       try {
         const data = await api.getAbout(userId);
-        setLocation({ city: data.city, country: data.country });
+        console.log(data);
+        if(data.city && data.country) {
+          setLocation({ city: data.city, country: data.country });
+        }
       } catch (err) {
         setError(err.message);
       }
