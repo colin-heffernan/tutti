@@ -38,25 +38,19 @@ function SignUpPage({ onNavigate, onLogin, userId }) {
 // api calls to database
   const handleCreateAccount = async () => {
     setLoading(true);
-    try {
-      await api.register({ username, email, password, confirm_password: confirmPassword, display_name: displayName });
-      setStep(2);
-      const response = await api.login({ username, password });
-      onLogin(response.user_id);
-    } catch (err) {
-      setErrors({ general: err.message });
-    }
+    api.register({ username, email, password, confirm_password: confirmPassword, display_name: displayName })
+      .then((response) => {
+        setStep(2);
+        onLogin(response.id);
+      })
+      .catch((err) => setErrors({ general: err.message }));
     setLoading(false);
   };
 
   const handleSaveLocation = async () => {
     if (geo.location) {
       setLoading(true);
-      try {
-        await api.updateLocation(userId, geo.location.city, geo.location.country);
-      } catch (err) {
-        console.error("Failed to save location:", err);
-      }
+      api.updateLocation(userId, geo.location.city, geo.location.country).then(() => {}).catch((err) => console.error("Failed to save location:", err));
       setLoading(false);
     }
     try {
@@ -64,25 +58,12 @@ function SignUpPage({ onNavigate, onLogin, userId }) {
     } catch (err) {
       setErrors({ general: err.message });
     }
-    // setStep(3);
   };
 
-  /* const handleSaveMusicProfile = async () => {
-    setLoading(true);
-    try {
-      await api.saveMusicProfile(selectedSongs.map((s) => s.mbid));
-      onLogin();
-      onNavigate("home");
-    } catch (err) {
-      setErrors({ general: err.message });
-    }
-    setLoading(false);
-  }; */
-
-  // Step progress dots for signing up i.e 1 - 2 -3
+  // Step progress dots for signing up i.e 1 - 2
   const StepIndicator = () => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 32 }}>
-      {[1, 2/*, 3*/].map((s) => (
+      {[1, 2].map((s) => (
         <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",

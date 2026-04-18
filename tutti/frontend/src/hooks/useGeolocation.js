@@ -10,15 +10,13 @@ function useGeolocation(userId = -1) {
 
   useEffect(() => {
     const fetchAbout = async () => {
-      try {
-        const data = await api.getAbout(userId);
-        console.log(data);
-        if(data.city && data.country) {
-          setLocation({ city: data.city, country: data.country });
-        }
-      } catch (err) {
-        setError(err.message);
-      }
+      api.getAbout(userId)
+        .then((data) => {
+          if(data.city && data.country) {
+            setLocation({ city: data.city, country: data.country });
+          }
+        })
+        .catch((err) => setError(err.message));
     };
     if(userId != -1) fetchAbout();
   }, [userId]);

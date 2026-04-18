@@ -19,23 +19,21 @@ function ScrobbleForm({ userId, onAdded }) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    try {
-      const scrobble = await api.createScrobble(userId, {
-        artist: form.artist,
-        album: form.album.trim() || form.title,
-        title: form.title,
-        date: form.date,
-        track: parseInt(form.track) || 1,
-        num_tracks: parseInt(form.num_tracks) || 1,
-      });
-      onAdded(scrobble);
-      setForm(EMPTY_FORM);
-      setOpen(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+    api.createScrobble(userId, {
+      artist: form.artist,
+      album: form.album.trim() || form.title,
+      title: form.title,
+      date: form.date,
+      track: parseInt(form.track) || 1,
+      num_tracks: parseInt(form.num_tracks) || 1,
+    })
+      .then((scrobble) => {
+        onAdded(scrobble);
+        setForm(EMPTY_FORM);
+        setOpen(false);
+      })
+      .catch((err) => setError(err.message));
+    setSubmitting(false);
   };
 
   const fieldStyle = {
@@ -177,14 +175,13 @@ function ActivityFeed({ onNavigate, userId }) {
   };
 
   const refreshProfile = async () => {
-    try {
-      const profileData = await api.getProfile(userId);
-      const sortedProfile = Object.entries(profileData.profile).sort((a, b) => b[1] - a[1]);
-      setProfile(sortedProfile);
-      setOverlaps(profileData.overlaps);
-    } catch(err) {
-      // non-critical, don't surface to user
-    }
+    api.getProfile(userId)
+      .then((profileData) => {
+        const sortedProfile = Object.entries(profileData.profile).sort((a, b) => b[1] - a[1]);
+        setProfile(sortedProfile);
+        setOverlaps(profileData.overlaps);
+      })
+      .catch(() => {});
   };
 
   // Fetch the scrobbles from the REST API
@@ -195,15 +192,13 @@ function ActivityFeed({ onNavigate, userId }) {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await api.logout();
-      onLogout();
-      onNavigate("login");
-    } catch (err) {
-      setError(err.message + "\nLogout failed.");
-    } finally {
-      setLoading(false);
-    }
+    api.logout()
+      .then(() => {
+        onLogout();
+        onNavigate("login");
+      })
+      .catch((err) => setError(err.message + "\nLogout failed."));
+    setLoading(false);
   };
 
 

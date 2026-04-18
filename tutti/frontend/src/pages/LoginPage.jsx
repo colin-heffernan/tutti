@@ -23,15 +23,13 @@ function LoginPage({ onNavigate, onLogin, userId }) {
   const handleLogin = async () => {
     if (!username || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
-    try {
-      const response = await api.login({ username, password });
-      onLogin(response.user_id);
-      onNavigate("home");
-    } catch (err) {
-      setError(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
-    }
+    api.login({ username, password })
+      .then((response) => {
+        onLogin(response.user_id);
+        onNavigate("home");
+      })
+      .catch((err) => setError(err.message || "Login failed. Please check your credentials."));
+    setLoading(false);
   };
 
 

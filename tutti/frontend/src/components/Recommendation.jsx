@@ -14,36 +14,24 @@
     const [cover, setCover] = useState("");
 
     const getBaseSongData = async (base_song) => {
-      try {
-        let baseSongData = await api.getSongData(base_song);
-        setBaseData(baseSongData);
-      } catch(err) {
-        setBaseDataError(err);
-      } finally {
-        setBaseDataLoading(false);
-      }
+      api.getSongData(base_song)
+        .then(setBaseData)
+        .catch(setBaseDataError);
+      setBaseDataLoading(false);
     };
 
     const getSongData = async (recommended_song) => {
-      try {
-        let songData = await api.getSongData(recommended_song);
-        setData(songData);
-      } catch(err) {
-        setDataError(err);
-      } finally {
-        setDataLoading(false);
-      }
+      api.getSongData(recommended_song)
+        .then(setData)
+        .catch(setDataError);
+      setDataLoading(false);
     };
 
     const getSongCover = async (recommended_song) => {
-      try {
-        let songCover = await api.getSongCover(recommended_song);
-        setCover(songCover.cover);
-      } catch(err) {
-        setCoverError(err);
-      } finally {
-        setCoverLoading(false);
-      }
+      api.getSongCover(recommended_song)
+        .then((response) => setCover(response.cover))
+        .catch(setCoverError);
+      setCoverLoading(false);
     };
 
     useEffect(() => {

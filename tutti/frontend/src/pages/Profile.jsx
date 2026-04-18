@@ -42,12 +42,9 @@
         return;
       }
       const fetchAbout = async () => {
-        try {
-          const data = await api.getAbout(userId);
-          setAbout(data);
-        } catch (err) {
-          setError(err.message);
-        }
+        api.getAbout(userId)
+          .then(setAbout)
+          .catch((err) => setError(err.message));
       };
       fetchAbout();
     }, [isLoggedIn]);
@@ -55,13 +52,12 @@
     if (!isLoggedIn) return null;
 
     const handleLogout = async () => {
-      try {
-        await api.logout();
-        onLogout();
-        onNavigate("login");
-      } catch (err) {
-        setError(err.message);
-      }
+      api.logout()
+        .then(() => {
+          onLogout();
+          onNavigate("login");
+        })
+        .catch((err) => setError(err.message));
     };
 
     const isLocationAlreadySaved =
@@ -73,14 +69,10 @@
     const handleSaveLocation = async () => {
       if (!geo.location) return;
       setLocationLoading(true);
-      try {
-        await api.updateLocation(userId, geo.location.city, geo.location.country);
-        setLocationSaved(true);
-      } catch (err) {
-        setError("Could not save location — not yet available on the server.");
-      } finally {
-        setLocationLoading(false);
-      }
+      api.updateLocation(userId, geo.location.city, geo.location.country)
+        .then(() => setLocationSaved(true))
+        .catch(() => setError("Could not save location — not yet available on the server."));
+      setLocationLoading(false);
     };
 
     const handleDeleteAccount = () => {

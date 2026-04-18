@@ -126,25 +126,17 @@
     const [ratingPending, setRatingPending] = useState(false);
 
     const getScrobbleData = async (song_id) => {
-      try {
-        let scrobbleData = await api.getSongData(song_id);
-        setData(scrobbleData);
-      } catch(err) {
-        setDataError(err);
-      } finally {
-        setDataLoading(false);
-      }
+      api.getSongData(song_id)
+        .then(setData)
+        .catch(setDataError);
+      setDataLoading(false);
     };
 
     const getScrobbleCover = async (song_id) => {
-      try {
-        let scrobbleCover = await api.getSongCover(song_id);
-        setCover(scrobbleCover.cover);
-      } catch(err) {
-        setCoverError(err);
-      } finally {
-        setCoverLoading(false);
-      }
+      api.getSongCover(song_id)
+        .then((response) => setCover(response.cover))
+        .catch(setCoverError);
+      setCoverLoading(false);
     };
 
     useEffect(() => {
@@ -155,15 +147,13 @@
     const handleRating = async (like) => {
       if (ratingPending) return;
       setRatingPending(true);
-      try {
-        const result = await api.rateScrobble(scrobble_id, like);
-        setRating(result.scrobble.rating);
-        onRatingChange?.();
-      } catch(err) {
-        // silently revert — no UI disruption for a rating failure
-      } finally {
-        setRatingPending(false);
-      }
+      api.rateScrobble(scrobble_id, like)
+        .then((result) => {
+          setRating(result.scrobble.rating);
+          onRatingChange?.();
+        })
+        .catch(() => {});
+      setRatingPending(false);
     };
 
     const handleLike = async () => handleRating(true);

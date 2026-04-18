@@ -18,16 +18,13 @@ function App() {
   // Check for existing session
   useEffect(() => {
     const checkSession = async () => {
-      try {
-        const response = await api.checkSession();
-        setUserId(response.user_id);
-        // setIsLoggedIn(isAuthenticated);
-        setCurrentPage("home");
-      } catch(err) {
-        setUserId(-1);
-      } finally {
-        setLoading(false);
-      }
+      api.checkSession()
+        .then((response) => {
+          setUserId(response.user_id);
+          setCurrentPage("home");
+        })
+        .catch((err) => setUserId(-1));
+      setLoading(false);
     };
     checkSession();
   }, []);

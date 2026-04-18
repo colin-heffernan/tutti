@@ -18,41 +18,36 @@
 
     useEffect(() => {
       const fetchProfile = async () => {
-        try {
-          const response = await api.getProfile(userId);
-          const userProfile = Object.entries(response.profile).sort((a, b) => {
-            if(a[1] > b[1]) {
-              return -1;
-            } else if(a[1] < b[1]) {
-              return 1;
-            } else {
-              return a[0].toLowerCase().localeCompare(b[0].toLowerCase());
+        api.getProfile(userId)
+          .then((response) => {
+            const userProfile = Object.entries(response.profile).sort((a, b) => {
+              if(a[1] > b[1]) {
+                return -1;
+              } else if(a[1] < b[1]) {
+                return 1;
+              } else {
+                return a[0].toLowerCase().localeCompare(b[0].toLowerCase());
+              }
+            });
+            let userOverlaps = response.overlaps;
+            for(const [k, v] of Object.entries(userOverlaps)) {
+              userOverlaps[k] = Object.entries(v);
             }
-          });
-          let userOverlaps = response.overlaps;
-          for(const [k, v] of Object.entries(userOverlaps)) {
-            userOverlaps[k] = Object.entries(v);
-          }
-          const userOverlapsList = Object.entries(userOverlaps);
-          setProfile(userProfile);
-          setOverlaps(userOverlapsList);
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
+            const userOverlapsList = Object.entries(userOverlaps);
+            setProfile(userProfile);
+            setOverlaps(userOverlapsList);
+          })
+          .catch((err) => setError(err.message));
+        setLoading(false);
       };
       fetchProfile();
     }, []);
 
     useEffect(() => {
       const fetchProfile = async () => {
-        try {
-          const response = await api.getRecommendations(userId);
-          setRecommendations(response);
-        } catch (err) {
-          setError(err.message);
-        }
+        api.getRecommendations(userId)
+          .then(setRecommendations)
+          .catch((err) => setError(err.message));
       };
       fetchProfile();
     }, []);

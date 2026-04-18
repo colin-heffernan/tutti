@@ -34,6 +34,11 @@ class TuttiUserRegisterView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = TuttiUserSerializer
 
+    # Log in the new user
+    def perform_create(self, serializer):
+        user = serializer.save()
+        login(self.request, user)
+
 # Login user
 class TuttiUserLoginView(APIView):
     def post(self, request):
