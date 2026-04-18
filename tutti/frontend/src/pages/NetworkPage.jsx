@@ -379,7 +379,7 @@ function NetworkPage({ userId, onNavigate }) {
   useEffect(() => {
     if (!isLoggedIn) { onNavigate("login"); return; }
     api.getAbout(userId).then(setAbout).catch(() => {});
-    // TODO: fetch friends list from api.getFriends(userId) when endpoint exists
+    api.getFriends(userId).then(setFriends).catch(() => {});
     api.getInboundFriendRequests(userId).then(setIncomingRequests).catch(() => {});
   }, [isLoggedIn]);
 
