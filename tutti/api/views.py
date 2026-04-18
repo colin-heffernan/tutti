@@ -226,10 +226,10 @@ class TuttiUserFriendsView(ListAPIView):
 
 # User friends
 class TuttiUserFriendRequestsView(ListAPIView):
-    model = FriendRequest
+    model = TuttiUser
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = FriendRequestSerializer
+    serializer_class = TuttiUserSerializer
 
     # Define the queryset for the list
     def get_queryset(self):
@@ -242,9 +242,9 @@ class TuttiUserFriendRequestsView(ListAPIView):
         slug = self.kwargs["slug"]
         match slug:
             case "inbound":
-                return user.requests_received
+                return TuttiUser.objects.filter(requests_sent__sent_to=user.id)
             case "outbound":
-                return user.requests_sent
+                return TuttiUser.objects.filter(requests_received__sent_from=user.id)
             case _:
                 return []
 
@@ -253,12 +253,20 @@ class TuttiUserAddView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, user_id):
+    def get(self, request, user_id):
         # Check if the user exists
         try:
             user = TuttiUser.objects.get(id=user_id)
         except TuttiUser.DoesNotExist:
             return Response({"status": "User does not exist."}, status=404)
+
+        # Make sure the user isn't self-requesting
+        if user == request.user:
+            return Response({"status": "You cannot send a friend request to yourself."}, status=403)
+
+        # Make sure the users are not already friends
+        if request.user.friends.filter(id=user.id).exists():
+            return Response({"status": f"You are already friends with user {user.id}."}, status=403)
 
         # Use a nice try-catch to figure out if the request already exists
         try:
@@ -268,9 +276,14 @@ class TuttiUserAddView(APIView):
             friend_request.delete()
             return Response({"status": f"Friend request from user {user.id} accepted"})
         except FriendRequest.DoesNotExist:
-            friend_request = FriendRequest(sent_from=request.user, sent_to=user)
-            friend_request.save()
-            return Response({"status": f"Friend request sent to user {user.id}"})
+            try:
+                friend_request = request.user.requests_sent.get(sent_to=user)
+                friend_request.delete()
+                return Response({"status": f"Friend request to user {user.id} cancelled"})
+            except FriendRequest.DoesNotExist:
+                friend_request = FriendRequest(sent_from=request.user, sent_to=user)
+                friend_request.save()
+                return Response({"status": f"Friend request sent to user {user.id}"})
 
 class SongMetadataView(APIView):
     @method_decorator(cache_page(60 * 15))

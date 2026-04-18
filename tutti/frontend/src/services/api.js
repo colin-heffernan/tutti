@@ -125,6 +125,14 @@ const api = {
         body: JSON.stringify({ like }),
       });
     },
+
+    async getFriends(userId) {
+        return await api.request(`/user/${userId}/friends/`);
+    },
+
+    async getInboundFriendRequests(userId) {
+        return await api.request(`/user/${userId}/friend-requests/inbound/`);
+    },
 };
 
 export default api;

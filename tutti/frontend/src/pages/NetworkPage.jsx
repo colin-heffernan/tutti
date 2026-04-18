@@ -381,6 +381,7 @@ function NetworkPage({ userId, onNavigate }) {
     api.getAbout(userId).then(setAbout).catch(() => {});
     // TODO: fetch friends list from api.getFriends(userId) when endpoint exists
     // TODO: fetch incoming requests from api.getFriendRequests(userId) when endpoint exists
+    api.getInboundFriendRequests(userId).then(setIncomingRequests).catch(() => {});
   }, [isLoggedIn]);
 
   if (!isLoggedIn) return null;
