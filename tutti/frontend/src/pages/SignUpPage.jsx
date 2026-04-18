@@ -25,7 +25,7 @@ function SignUpPage({ onNavigate, onLogin, userId }) {
   const [loading, setLoading] = useState(false);
   const isLoggedIn = userId != -1;
 
-  if(isLoggedIn) {
+  if(isLoggedIn && step == 1) {
     onNavigate("profile");
   }
 
@@ -41,6 +41,8 @@ function SignUpPage({ onNavigate, onLogin, userId }) {
     try {
       await api.register({ username, email, password, confirm_password: confirmPassword, display_name: displayName });
       setStep(2);
+      const response = await api.login({ username, password });
+      onLogin(response.user_id);
     } catch (err) {
       setErrors({ general: err.message });
     }
@@ -58,8 +60,6 @@ function SignUpPage({ onNavigate, onLogin, userId }) {
       setLoading(false);
     }
     try {
-      await api.login({ username, password });
-      onLogin();
       onNavigate("home");
     } catch (err) {
       setErrors({ general: err.message });
