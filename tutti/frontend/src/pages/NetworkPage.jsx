@@ -369,7 +369,7 @@ function NetworkPage({ userId, onNavigate }) {
 
   const [about, setAbout] = useState(null);
   const [friends, setFriends] = useState([]);
-  const [incomingRequests, setIncomingRequests] = useState(DEMO_INCOMING);
+  const [incomingRequests, setIncomingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState(new Set());
   const [highlightedId, setHighlightedId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
