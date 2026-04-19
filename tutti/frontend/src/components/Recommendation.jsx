@@ -49,7 +49,7 @@
           display: "flex", flexDirection: "row", alignItems: "center",
         }}>
           <div style={{ width: "56px", height: "56px", background: THEME.bgElevated, marginRight: "16px", flexShrink: 0, borderRadius: THEME.radius.sm, overflow: "hidden" }}>
-            {!coverLoading && (<img src={cover} alt={`${data.album} front cover`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />)}
+            {!coverLoading && (<img src={cover ? cover : null} alt={`${data.album} front cover`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />)}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: "0 0 2px", fontFamily: THEME.fontBody, fontSize: 15, fontWeight: 700, color: THEME.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
