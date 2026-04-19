@@ -138,6 +138,10 @@ const api = {
     async getInboundFriendRequests(userId) {
         return await api.request(`/user/${userId}/friend-requests/inbound/`);
     },
+
+    async getOutboundFriendRequests(userId) {
+        return await api.request(`/user/${userId}/friend-requests/outbound/`);
+    },
 };
 
 export default api;

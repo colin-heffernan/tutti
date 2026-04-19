@@ -370,6 +370,7 @@ function NetworkPage({ userId, onNavigate }) {
   const [about, setAbout] = useState(null);
   const [friends, setFriends] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
+  const [outgoingRequests, setOutgoingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState(new Set());
   const [highlightedId, setHighlightedId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
@@ -395,6 +396,7 @@ function NetworkPage({ userId, onNavigate }) {
       }).catch(() => {});
     api.getFriends(userId).then(setFriends).catch(() => {});
     api.getInboundFriendRequests(userId).then(setIncomingRequests).catch(() => {});
+    api.getOutboundFriendRequests(userId).then(setOutgoingRequests).catch(() => {});
   }, [isLoggedIn]);
 
   if (!isLoggedIn) return null;
@@ -450,6 +452,7 @@ function NetworkPage({ userId, onNavigate }) {
       <FriendSidebar
         friends={friends}
         incomingRequests={incomingRequests}
+        outgoingRequests={outgoingRequests}
         highlightedId={highlightedId}
         onSelectFriend={handleSelectFriend}
         onAccept={handleAccept}
