@@ -17,8 +17,8 @@ class TuttiUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
-    city = models.CharField(max_length=64, unique=True, null=True)
-    country = models.CharField(max_length=64, unique=True, null=True)
+    city = models.CharField(max_length=64, null=True)
+    country = models.CharField(max_length=64, null=True)
     private = models.BooleanField(default=True)
     friends = models.ManyToManyField("self")
     REQUIRED_FIELDS = ["password"]
