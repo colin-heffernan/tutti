@@ -84,6 +84,11 @@ const api = {
     return await api.request(`/user/${userId}/profile/`);
   },
 
+  // Sends a request to get the city's profile
+  async getLocationProfile(city, country) {
+    return await api.request(`/location/${country}/${city}/`);
+  },
+
   // Sends a request to get the current user's recommendations
   async getRecommendations(userId) {
     return await api.request(`/user/${userId}/recommendations/`);

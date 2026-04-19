@@ -8,6 +8,8 @@ from .views import (
     TuttiUserScrobblesView, TuttiUserProfileView, TuttiUserRecommendationsView, TuttiUserAboutView,
     # Friend views
     TuttiUserFriendsView, TuttiUserFriendRequestsView, TuttiUserAddView,
+    # Location views
+    LocationProfileView,
     # Scrobble views
     ScrobbleView,
     # Song views
@@ -28,6 +30,7 @@ urlpatterns = [
     path('user/<int:user_id>/friends/', TuttiUserFriendsView.as_view()),
     path('user/<int:user_id>/friend-requests/<slug:slug>/', TuttiUserFriendRequestsView.as_view()), # .../inbound/ for inbound, /outbound/ for outbound
     path('user/<int:user_id>/add/', TuttiUserAddView.as_view()),
+    path('location/<str:country>/<str:city>/', LocationProfileView.as_view()),
     path('scrobble/<int:scrobble_id>/', ScrobbleView.as_view()),
     path('song/<int:song_id>/metadata/', SongMetadataView.as_view()),
     path('song/<int:song_id>/cover/', SongCoverView.as_view()),

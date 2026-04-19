@@ -28,6 +28,42 @@ TuttiUser = get_user_model()
 #     def get(self, request):
 #         return Response({"csrfToken": get_token(request)})
 
+def make_profile(scrobbles):
+    tags = {}
+    tag_overlaps = {}
+    for scrobble in scrobbles:
+        try:
+            date = scrobble.time_created.date()
+            age = timezone.now().date() - date
+            rating = scrobble.rating
+            weight = 180 - (3 - rating) if rating > 0 else 0
+            recording = fetchMetadata("recording", scrobble.song.recording_mbid, inc="artist-credits+genres+url-rels")
+            recording_tags = recording["genres"]
+            song_tags = []
+            for recording_tag in sorted(recording_tags, key=lambda x: x["name"]):
+                tag_name = recording_tag["name"]
+                for song_tag in song_tags:
+                    if tag_name in tag_overlaps[song_tag]:
+                        tag_overlaps[song_tag][tag_name] += 1
+                    else:
+                        tag_overlaps[song_tag][tag_name] = 1
+                song_tags.append(tag_name)
+                if tag_name not in tag_overlaps:
+                    tag_overlaps[tag_name] = {}
+                if tag_name in tags:
+                    tags[tag_name] += weight
+                else:
+                    tags[tag_name] = weight
+        except Exception as e:
+            print(f"fail: {e}")
+    sum_scores = sum(tags.values())
+    for tag in tags:
+        tags[tag] = (tags[tag] * 100) / sum_scores
+    overlaps = dict(filter(lambda x: x[1] != {}, tag_overlaps.items()))
+    for overlap_tag in overlaps:
+        overlaps[overlap_tag] = dict(filter(lambda x: x[1] != {}, overlaps[overlap_tag].items()))
+    return (tags, overlaps)
+
 # Register user
 class TuttiUserRegisterView(CreateAPIView):
     model = TuttiUser
@@ -120,39 +156,7 @@ class TuttiUserProfileView(APIView):
         if user != request.user and user.private:
             return Response({"status": "User does not exist."}, status=404)
         scrobbles = Scrobble.objects.filter(tuttiuser=user_id, time_created__gte=(timezone.now() - datetime.timedelta(180)))
-        tags = {}
-        tag_overlaps = {}
-        for scrobble in scrobbles:
-            try:
-                date = scrobble.time_created.date()
-                age = timezone.now().date() - date
-                rating = scrobble.rating
-                weight = 180 - (3 - rating) if rating > 0 else 0
-                recording = fetchMetadata("recording", scrobble.song.recording_mbid, inc="artist-credits+genres+url-rels")
-                recording_tags = recording["genres"]
-                song_tags = []
-                for recording_tag in sorted(recording_tags, key=lambda x: x["name"]):
-                    tag_name = recording_tag["name"]
-                    for song_tag in song_tags:
-                        if tag_name in tag_overlaps[song_tag]:
-                            tag_overlaps[song_tag][tag_name] += 1
-                        else:
-                            tag_overlaps[song_tag][tag_name] = 1
-                    song_tags.append(tag_name)
-                    if tag_name not in tag_overlaps:
-                        tag_overlaps[tag_name] = {}
-                    if tag_name in tags:
-                        tags[tag_name] += weight
-                    else:
-                        tags[tag_name] = weight
-            except Exception as e:
-                print(f"fail: {e}")
-        sum_scores = sum(tags.values())
-        for tag in tags:
-            tags[tag] = (tags[tag] * 100) / sum_scores
-        overlaps = dict(filter(lambda x: x[1] != {}, tag_overlaps.items()))
-        for overlap_tag in overlaps:
-            overlaps[overlap_tag] = dict(filter(lambda x: x[1] != {}, overlaps[overlap_tag].items()))
+        (tags, overlaps) = make_profile(scrobbles)
         return Response({"profile": tags, "overlaps": overlaps})
 
 # User recommendations
@@ -289,6 +293,13 @@ class TuttiUserAddView(APIView):
                 friend_request = FriendRequest(sent_from=request.user, sent_to=user)
                 friend_request.save()
                 return Response({"status": f"Friend request sent to user {user.id}"})
+
+# Location listening profile
+class LocationProfileView(APIView):
+    def get(self, request, country, city):
+        scrobbles = Scrobble.objects.filter(tuttiuser__city=city, tuttiuser__country=country, time_created__gte=(timezone.now() - datetime.timedelta(180)))
+        (tags, overlaps) = make_profile(scrobbles)
+        return Response({"profile": tags, "overlaps": overlaps})
 
 class SongMetadataView(APIView):
     @method_decorator(cache_page(60 * 15))

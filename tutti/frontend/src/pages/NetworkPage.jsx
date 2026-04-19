@@ -311,11 +311,10 @@ function UserCard({ user, friendStatus, isExpanded, onToggleExpand, highlighted,
   );
 }
 
-function CityTasteSection({ about }) {
+function CityTasteSection({ about, profile, overlaps }) {
   if (!about) return null;
 
   const hasLocation = about.city && about.city !== "Unknown";
-
   if (!hasLocation) {
     return (
       <div style={{
@@ -348,7 +347,8 @@ function CityTasteSection({ about }) {
         {about.country}
       </p>
       {/* Placeholder city-wide genre profile endpoint not yet implemented */}
-      <div style={{
+      {profile.length > 0 && <GenreForceMap profile={profile} overlaps={overlaps} />}
+      {/*<div style={{
         height: 180, borderRadius: THEME.radius.md,
         background: THEME.bgElevated, border: `1px dashed ${THEME.border}`,
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
@@ -359,7 +359,7 @@ function CityTasteSection({ about }) {
         <p style={{ fontFamily: THEME.fontBody, fontSize: 13, color: THEME.textSecondary, margin: 0 }}>
           Collective genre map for {about.city} will appear here.
         </p>
-      </div>
+      </div>*/}
     </div>
   );
 }
@@ -373,12 +373,26 @@ function NetworkPage({ userId, onNavigate }) {
   const [sentRequests, setSentRequests] = useState(new Set());
   const [highlightedId, setHighlightedId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [profile, setProfile] = useState([]);
+  const [overlaps, setOverlaps] = useState({});
 
   const cardRefs = useRef({});
 
   useEffect(() => {
     if (!isLoggedIn) { onNavigate("login"); return; }
-    api.getAbout(userId).then(setAbout).catch(() => {});
+    api.getAbout(userId)
+      .then((response) => {
+        setAbout(response);
+        if(response.city && response.country) {
+          api.getLocationProfile(response.city, response.country)
+            .then((profileData) => {
+              const sortedProfile = Object.entries(profileData.profile).sort((a, b) => b[1] - a[1]);
+              setProfile(sortedProfile);
+              setOverlaps(profileData.overlaps);
+            })
+            .catch(() => {});
+        }
+      }).catch(() => {});
     api.getFriends(userId).then(setFriends).catch(() => {});
     api.getInboundFriendRequests(userId).then(setIncomingRequests).catch(() => {});
   }, [isLoggedIn]);
@@ -450,7 +464,7 @@ function NetworkPage({ userId, onNavigate }) {
           Listeners near you and people who share your taste.
         </p>
 
-        <CityTasteSection about={about} />
+        <CityTasteSection about={about} profile={profile} overlaps={overlaps} />
 
         {sortedUsers.map((user) => (
           <UserCard
