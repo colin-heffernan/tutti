@@ -26,6 +26,7 @@ def find_or_create_song(album, date, num_tracks, title, artist, track):
 
 class TuttiUserSerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(allow_blank=True)
+    password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, data):
